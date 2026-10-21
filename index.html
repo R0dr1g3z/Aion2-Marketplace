@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="pl" class="dark h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aion 2 - Market Price Tracker SaaS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: { extend: {
+                fontFamily: { sans: ['Inter', 'sans-serif'] },
+                colors: {
+                    slate: { 850: '#131e32', 900: '#0f172a', 950: '#080d1a' },
+                    indigo: { 500: '#6366f1', 600: '#4f46e5' },
+                    amber: { 400: '#fbbf24', 500: '#f59e0b' },
+                    emerald: { 400: '#34d399', 500: '#10b981' }
+                }
+            } }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #080d1a; color: #f1f5f9; }
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+        .glass-card { background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .aion-gold { color: #fbbf24; text-shadow: 0 0 10px rgba(251, 191, 36, 0.25); }
+        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.8); cursor: pointer; }
+            .read-only .admin-only { display: none !important; }
+    </style>
+</head>
+<body class="h-full flex flex-col antialiased text-slate-100 selection:bg-indigo-500 selection:text-white">
+
+    <header class="border-b border-slate-800/80 bg-slate-900/90 backdrop-blur sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16 gap-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-amber-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                        <i data-lucide="gem" class="w-5 h-5 text-white"></i>
+                    </div>
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-lg font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-indigo-200">Aion 2 Market</span>
+                            <span class="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-bold uppercase tracking-wider">SaaS Tracker</span>
+                        </div>
+                        <p class="text-[11px] text-slate-400 font-medium">Real-time Broker & Price Analytics</p>
+                    </div>
+                </div>
+                <div class="flex-1 max-w-md hidden md:block">
+                    <div class="relative">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="searchInput" oninput="handleSearch(this.value)" placeholder="Szukaj przedmiotu w Aion 2..."
+                            class="w-full pl-10 pr-4 py-2 bg-slate-950/70 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-500 text-slate-200">
+                    </div>
+                </div>
+                <div class="flex items-center gap-3">
+                    <button onclick="exportData()" title="Pobierz kopię danych (JSON)" class="p-2 rounded-xl text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 border border-slate-800 transition-all">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                    </button>
+                    <button onclick="document.getElementById('importFile').click()" title="Wczytaj kopię danych (JSON)" class="admin-only p-2 rounded-xl text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 border border-slate-800 transition-all">
+                        <i data-lucide="upload" class="w-4 h-4"></i>
+                    </button>
+                    <input type="file" id="importFile" accept=".json,application/json" class="hidden" onchange="importData(this)">
+                    <button onclick="openAddModal()" class="admin-only flex items-center gap-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 text-white font-semibold px-4 py-2 rounded-xl transition-all shadow-lg shadow-indigo-500/20 active:scale-95 text-sm">
+                        <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                        <span class="hidden sm:inline">Dodaj przedmiot</span>
+                    </button>
+                    <div class="h-8 w-[1px] bg-slate-800 hidden sm:block"></div>
+                    <button id="authBtn" onclick="toggleAuth()" class="flex items-center gap-2 px-3 h-9 rounded-xl bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 hover:text-white transition-all"><i data-lucide="log-in" class="w-4 h-4"></i><span class="hidden sm:inline">Zaloguj</span></button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="flex-1 w-full flex flex-col lg:flex-row">
+
+    <!-- Sidebar kategorii: pełna wysokość, przyklejony do lewej krawędzi -->
+    <aside class="w-full lg:w-64 flex-shrink-0 border-b lg:border-b-0 lg:border-r border-slate-800/80 bg-slate-900/60 backdrop-blur lg:sticky lg:top-16 lg:self-start lg:h-[calc(100vh-4rem)]">
+        <nav class="p-3 lg:p-4 lg:h-full flex flex-col">
+            <p class="hidden lg:flex items-center gap-2 px-3 pt-1 pb-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                <i data-lucide="layout-list" class="w-3.5 h-3.5 text-indigo-400"></i> Kategorie
+            </p>
+            <div id="categoryList" class="flex lg:flex-col gap-1.5 overflow-x-auto lg:overflow-visible"></div>
+        </nav>
+    </aside>
+
+    <main class="flex-1 min-w-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <div class="block md:hidden">
+            <div class="relative">
+                <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                <input type="text" oninput="handleSearch(this.value)" placeholder="Szukaj przedmiotu w Aion 2..."
+                    class="w-full pl-10 pr-4 py-2.5 bg-slate-950/70 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-slate-200">
+            </div>
+        </div>
+
+        <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div class="glass-card rounded-2xl p-4 flex items-center gap-4 border-slate-800">
+                <div class="p-3 bg-amber-500/10 text-amber-400 rounded-xl border border-amber-500/20"><i data-lucide="coins" class="w-6 h-6"></i></div>
+                <div class="min-w-0">
+                    <p class="text-xs font-medium text-slate-400">Aktualna cena (dziś)</p>
+                    <h3 class="text-lg font-bold whitespace-nowrap text-amber-400 mt-0.5" id="kpiCurrentPrice">—</h3>
+                    <p class="text-[11px] text-slate-500 truncate max-w-[190px]" id="kpiCurrentName">-</p>
+                </div>
+            </div>
+            <div class="glass-card rounded-2xl p-4 flex items-center gap-4 border-slate-800">
+                <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20"><i data-lucide="arrow-down-narrow-wide" class="w-6 h-6"></i></div>
+                <div class="min-w-0">
+                    <p class="text-xs font-medium text-slate-400">Najniższa cena (okres)</p>
+                    <h3 class="text-lg font-bold whitespace-nowrap text-emerald-400 mt-0.5" id="kpiLowPrice">—</h3>
+                    <p class="text-[11px] text-slate-500 truncate max-w-[190px]" id="kpiLowName">-</p>
+                </div>
+            </div>
+            <div class="glass-card rounded-2xl p-4 flex items-center gap-4 border-slate-800">
+                <div class="p-3 bg-rose-500/10 text-rose-400 rounded-xl border border-rose-500/20"><i data-lucide="arrow-up-narrow-wide" class="w-6 h-6"></i></div>
+                <div class="min-w-0">
+                    <p class="text-xs font-medium text-slate-400 whitespace-nowrap">Najwyższa cena (okres)</p>
+                    <h3 class="text-lg font-bold whitespace-nowrap text-rose-400 mt-0.5" id="kpiHighPrice">—</h3>
+                    <p class="text-[11px] text-slate-500 truncate max-w-[190px]" id="kpiHighName">-</p>
+                </div>
+            </div>
+            <div class="glass-card rounded-2xl p-4 flex items-center gap-4 border-slate-800">
+                <div class="p-3 bg-cyan-500/10 text-cyan-400 rounded-xl border border-cyan-500/20"><i data-lucide="shopping-bag" class="w-6 h-6"></i></div>
+                <div class="min-w-0">
+                    <p class="text-xs font-medium text-slate-400">Przedmioty w sprzedaży</p>
+                    <h3 class="text-lg font-bold whitespace-nowrap text-cyan-400 mt-0.5" id="kpiSales">—</h3>
+                    <p class="text-[11px] text-slate-500 truncate max-w-[190px]" id="kpiSalesName">-</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="glass-card rounded-2xl p-5 border-slate-800 space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between gap-4 pb-3 border-b border-slate-800/80">
+                <div class="flex items-center gap-3">
+                    <div class="w-12 h-12 rounded-xl bg-slate-900 border border-slate-800 p-2 flex-shrink-0 flex items-center justify-center text-indigo-400">
+                        <i data-lucide="line-chart" class="w-6 h-6"></i>
+                    </div>
+                    <select id="itemChartSelect" onchange="selectItemForChart(Number(this.value))" class="bg-slate-950 border border-slate-700 text-white text-base font-bold rounded-xl px-3 py-1 focus:outline-none focus:border-indigo-500 cursor-pointer"></select>
+                </div>
+                <div class="flex flex-wrap items-center justify-end gap-2">
+                    <div id="periodCustom" class="hidden items-center gap-2 text-xs text-slate-400">
+                        <input type="date" id="periodFrom" onchange="setCustomRange('chart')" title="Od" class="bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-indigo-500">
+                        <span>–</span>
+                        <input type="date" id="periodTo" onchange="setCustomRange('chart')" title="Do" class="bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <select id="periodSelect" onchange="setPeriod(this.value)" title="Okres" class="bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500 cursor-pointer">
+                        <option value="7" selected>Ostatnie 7 dni</option>
+                        <option value="30">Ostatnie 30 dni</option>
+                        <option value="0">Cały okres</option>
+                        <option value="custom">Własny zakres…</option>
+                    </select>
+                </div>
+            </div>
+            <div class="relative h-64 sm:h-72 w-full pt-2"><canvas id="mainPriceChart"></canvas></div>
+        </section>
+
+        <section class="space-y-4">
+            <div class="flex flex-wrap items-center justify-between gap-3">
+                <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i data-lucide="list-filter" class="w-5 h-5 text-indigo-400"></i>
+                    Trend list
+                </h2>
+                <div class="flex flex-wrap items-center justify-end gap-2 text-xs">
+                    <span class="hidden sm:flex items-center gap-1.5 text-slate-500 font-medium">
+                        <i data-lucide="calendar-range" class="w-3.5 h-3.5"></i> Okres trendu
+                    </span>
+                    <div id="tableCustom" class="hidden items-center gap-1.5 text-slate-500">
+                        <input type="date" id="tableFrom" onchange="setCustomRange('table')" title="Od" class="bg-slate-950 border border-slate-700 text-slate-200 text-[11px] rounded-lg px-2 py-1 w-[7.25rem] focus:outline-none focus:border-indigo-500">
+                        <span>–</span>
+                        <input type="date" id="tableTo" onchange="setCustomRange('table')" title="Do" class="bg-slate-950 border border-slate-700 text-slate-200 text-[11px] rounded-lg px-2 py-1 w-[7.25rem] focus:outline-none focus:border-indigo-500">
+                    </div>
+                    <select id="tablePeriodSelect" onchange="setTablePeriod(this.value)" title="Okres trendu i mini wykresów" class="bg-slate-950 border border-slate-700 text-slate-200 text-[11px] font-medium rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500 cursor-pointer">
+                        <option value="7" selected>7 dni</option>
+                        <option value="30">30 dni</option>
+                        <option value="0">Cały okres</option>
+                        <option value="custom">Własny zakres…</option>
+                    </select>
+                </div>
+            </div>
+            <div class="glass-card rounded-2xl border-slate-800 overflow-hidden shadow-xl">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-800 text-[11px] uppercase tracking-wider text-slate-400 bg-slate-950/60">
+                                <th class="py-3.5 px-4 text-center w-10"><i data-lucide="star" class="w-3.5 h-3.5 mx-auto"></i></th>
+                                <th class="py-3.5 px-4">Przedmiot (Item)</th>
+                                <th class="py-3.5 px-4 text-right">Aktualna cena</th>
+                                <th class="py-3.5 px-4 text-right">Lowest Sale Price</th>
+                                <th class="py-3.5 px-4 text-right">Najwyższa cena</th>
+                                <th class="py-3.5 px-4 text-center">Trend Ceny</th>
+                                <th class="py-3.5 px-4 text-center">Wykres cen</th>
+                                <th class="py-3.5 px-4 text-right">Akcje</th>
+                            </tr>
+                        </thead>
+                        <tbody id="itemTableBody" class="divide-y divide-slate-800/60 text-sm"></tbody>
+                    </table>
+                </div>
+                <div id="emptyState" class="hidden py-12 text-center text-slate-500">
+                    <i data-lucide="package-search" class="w-12 h-12 mx-auto mb-3 opacity-40"></i>
+                    <p class="text-base font-medium">Brak przedmiotów spełniających kryteria</p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    </div>
+
+    <!-- Modal formularza -->
+    <div id="itemModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden transition-opacity opacity-0">
+        <div class="glass-card rounded-2xl border-slate-700 w-full max-w-lg overflow-hidden shadow-2xl transform scale-95 transition-all" id="modalContent">
+            <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+                <h3 id="modalTitle" class="text-lg font-bold text-white">Dodaj nowy przedmiot</h3>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+            </div>
+            <form id="itemForm" onsubmit="saveItem(event)" class="p-6 space-y-4">
+                <input type="hidden" id="formItemId">
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Nazwa przedmiotu *</label>
+                    <input type="text" id="formName" required placeholder="np. Radiant Odyle" class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white placeholder:text-slate-600">
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Kategoria *</label>
+                        <select id="formCategory" required class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white">
+                            <option value="Materiały">Materiały</option>
+                            <option value="Kamienie">Kamienie Szlachetne</option>
+                            <option value="Inne">Inne</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Sales List (oferty) *</label>
+                        <input type="number" id="formSales" required min="0" placeholder="151" class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white placeholder:text-slate-600">
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Lowest Sale Price (Kinah) *</label>
+                        <input type="number" id="formPrice" required min="0" placeholder="240000" class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white placeholder:text-slate-600">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Data wpisu *</label>
+                        <input type="date" id="formDate" required class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white">
+                    </div>
+                </div>
+                <div class="pt-4 border-t border-slate-800 flex items-center justify-between">
+                    <button type="button" id="modalDeleteBtn" onclick="promptDeleteFromModal()" class="hidden px-3 py-2 text-xs font-semibold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-xl transition-all">Usuń przedmiot</button>
+                    <div class="flex items-center gap-3 ml-auto">
+                        <button type="button" onclick="closeModal()" class="px-4 py-2 text-sm text-slate-400 hover:text-white">Anuluj</button>
+                        <button type="submit" class="px-5 py-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 text-white font-semibold rounded-xl text-sm shadow-lg shadow-indigo-500/20">Zapisz przedmiot</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Potwierdzenie usunięcia -->
+    <div id="confirmDeleteModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden transition-opacity opacity-0">
+        <div class="glass-card rounded-2xl border-rose-500/30 w-full max-w-md p-6 text-center shadow-2xl transform scale-95 transition-all" id="confirmDeleteContent">
+            <div class="w-14 h-14 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="alert-triangle" class="w-7 h-7"></i>
+            </div>
+            <h3 class="text-lg font-bold text-white mb-2">Potwierdzenie usunięcia</h3>
+            <p id="confirmDeleteMessage" class="text-sm text-slate-300 mb-6 leading-relaxed">Czy na pewno chcesz usunąć ten przedmiot z rynku?</p>
+            <div class="flex items-center justify-center gap-3">
+                <button onclick="closeConfirmDeleteModal()" class="px-4 py-2.5 text-sm font-medium text-slate-400 hover:text-white bg-slate-900 border border-slate-800 rounded-xl transition-all">Anuluj</button>
+                <button onclick="executeDelete()" class="px-5 py-2.5 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-500 rounded-xl shadow-lg shadow-rose-600/30 transition-all">Usuń z rynku</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 glass-card border border-indigo-500/30 px-4 py-3 rounded-xl flex items-center gap-3 shadow-2xl pointer-events-none">
+        <div class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center"><i data-lucide="check-circle" class="w-5 h-5"></i></div>
+        <div>
+            <p id="toastTitle" class="text-sm font-semibold text-white">Sukces</p>
+            <p id="toastMessage" class="text-xs text-slate-400">Pomyślnie zapisano zmiany.</p>
+        </div>
+    </div>
+
+    <script>
+        // === KONFIGURACJA (uzupełnij po założeniu projektu Firebase) ===
+        window.APP_CONFIG = {
+            ownerEmail: "masterskapompa69@gmail.com",   // tylko to konto może edytować ceny
+            firebase: {
+                apiKey: "AIzaSyClLTHXtF5uJRx0q-t5vQ9SnMA7sQUTRKY",
+                authDomain: "aion2-marketplace.firebaseapp.com",
+                projectId: "aion2-marketplace",
+                appId: "1:461502083392:web:999c3a679b13642a8b8aa5"
+            }
+        };
+    </script>
+    <script>
+const STORAGE_KEY = 'aion2_market_v1';
+const MONTHS = ['Sty','Lut','Mar','Kwi','Maj','Cze','Lip','Sie','Wrz','Paź','Lis','Gru'];
+
+function fmtDate(raw) {
+    const [, m, d] = raw.split('-');
+    return `${Number(d)} ${MONTHS[Number(m) - 1]}`;
+}
+function formatKinah(num) { return new Intl.NumberFormat('en-US').format(num); }
+function getTodayString() { return new Date().toISOString().split('T')[0]; }
+function esc(s) {
+    return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function seed(id, name, category, salesList, price, prev) {
+    const today = getTodayString();
+    const history = [];
+    if (prev) history.push({ rawDate: '2026-10-20', date: fmtDate('2026-10-20'), price: prev });
+    history.push({ rawDate: today, date: fmtDate(today), price });
+    return { id, name, category, salesList, lowestPrice: price, fav: false, history };
+}
+
+function loadItems() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) return JSON.parse(raw);
+    } catch (e) { /* storage unavailable */ }
+    return [
+        seed(1, 'Radiant Odyle', 'Materiały', 151, 240000, 260000),
+        seed(2, 'Radiant Orichalcum Ore', 'Materiały', 39, 69988, 75000),
+        seed(3, 'Radiant Asvata Log', 'Materiały', 35, 555555, 580000),
+        seed(4, 'Radiant Sapphire Gemstone', 'Kamienie', 65, 121000, 132000),
+        seed(5, 'Radiant Diamond Gemstone', 'Kamienie', 93, 66996, 72000),
+        seed(6, 'Radiant Ruby Gemstone', 'Kamienie', 19, 49999, 56000)
+    ];
+}
+function persist() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(items)); } catch (e) { /* ignore */ }
+}
+
+const APP = window.APP_CONFIG || {};
+const CLOUD = !!(APP.firebase && APP.firebase.apiKey && !String(APP.firebase.apiKey).startsWith('WKLEJ'));
+let canEdit = !CLOUD;
+let currentUser = null;
+let items = CLOUD ? [] : loadItems();
+let selectedItemId = items.length ? items[0].id : null;
+let pendingDeleteId = null;
+let currentFilterCategory = 'Wszystkie';
+let currentSearchQuery = '';
+let chartInstance = null;
+
+document.addEventListener('DOMContentLoaded', () => {
+    lucide.createIcons();
+    initRangeInputs();
+    refreshAll(true);
+    initCloud();
+});
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') {
+        if (!document.getElementById('confirmDeleteModal').classList.contains('hidden')) closeConfirmDeleteModal();
+        else if (!document.getElementById('itemModal').classList.contains('hidden')) closeModal();
+    }
+});
+
+function refreshAll(init = false) {
+    updateKPIs();
+    populateChartSelector();
+    renderTable();
+    if (init) initMainChart(); else updateChartData();
+}
+
+/* ---------- Trend + mini wykres (tabela) ---------- */
+let tablePeriodDays = 7; // 0 = cały okres
+function setTablePeriod(v) {
+    tablePeriodDays = v === 'custom' ? 'custom' : Number(v);
+    toggleCustom('tableCustom', tablePeriodDays === 'custom');
+    renderTable();
+}
+
+function getTrend(item) {
+    const h = tableHistory(item);
+    if (h.length < 2) return { pct: null, cls: 'text-slate-500', arrow: '', text: '—' };
+    const first = h[0].price, cur = h[h.length - 1].price;
+    if (first === 0 || cur === first) return { pct: 0, cls: 'text-slate-400', arrow: '→', text: '0%' };
+    const pct = ((cur - first) / first) * 100;
+    const up = pct > 0;
+    return {
+        pct,
+        cls: up ? 'text-rose-400' : 'text-emerald-400', // wzrost ceny = drożej dla kupującego
+        arrow: up ? '▲' : '▼',
+        text: `${up ? '+' : ''}${pct.toFixed(1)}%`
+    };
+}
+
+function sparkline(item, t) {
+    const prices = tableHistory(item).map(x => x.price);
+    if (!prices.length) return '<span class="block text-center text-[11px] text-slate-600">brak danych</span>';
+    const w = 110, h = 32, pad = 3;
+    const min = Math.min(...prices), max = Math.max(...prices), range = max - min || 1;
+    const pts = prices.map((p, i) => {
+        const x = prices.length === 1 ? w / 2 : pad + i * (w - 2 * pad) / (prices.length - 1);
+        const y = h - pad - ((p - min) / range) * (h - 2 * pad);
+        return [x.toFixed(1), y.toFixed(1)];
+    });
+    const color = (t.pct === null || t.pct === 0) ? '#64748b' : (t.pct > 0 ? '#fb7185' : '#34d399');
+    const last = pts[pts.length - 1];
+    return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" class="mx-auto block" aria-hidden="true">
+        <polyline points="${pts.map(q => q.join(',')).join(' ')}" fill="none" stroke="${color}" stroke-width="1.75" stroke-linejoin="round" stroke-linecap="round" opacity="0.9"/>
+        <circle cx="${last[0]}" cy="${last[1]}" r="2.5" fill="${color}"/></svg>`;
+}
+
+/* ---------- Okres ---------- */
+let periodDays = 7; // 0 = cały okres
+const isoDaysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString().split('T')[0]; };
+let periodRange = { from: isoDaysAgo(29), to: getTodayString() };
+let tableRange  = { from: isoDaysAgo(29), to: getTodayString() };
+
+function periodHistory(item, days = periodDays, range = periodRange) {
+    if (!item) return [];
+    if (days === 'custom') return item.history.filter(h => h.rawDate >= range.from && h.rawDate <= range.to);
+    if (!days) return item.history;
+    const fromStr = isoDaysAgo(days);
+    const f = item.history.filter(h => h.rawDate >= fromStr);
+    return f.length ? f : item.history.slice(-1);
+}
+function currentEntry(item) {
+    return item.history.find(h => h.rawDate === getTodayString()) || item.history[item.history.length - 1];
+}
+function tableHistory(item) { return periodHistory(item, tablePeriodDays, tableRange); }
+function periodLabel() {
+    if (periodDays === 'custom') return `${fmtDate(periodRange.from)} – ${fmtDate(periodRange.to)}`;
+    return periodDays ? `ostatnie ${periodDays} dni` : 'cały okres';
+}
+function toggleCustom(id, on) {
+    const el = document.getElementById(id);
+    el.classList.toggle('hidden', !on);
+    el.classList.toggle('flex', on);
+}
+function setPeriod(v) {
+    periodDays = v === 'custom' ? 'custom' : Number(v);
+    toggleCustom('periodCustom', periodDays === 'custom');
+    updateChartData();
+}
+function setCustomRange(kind) {
+    const pre = kind === 'chart' ? 'period' : 'table';
+    const fromEl = document.getElementById(pre + 'From'), toEl = document.getElementById(pre + 'To');
+    let from = fromEl.value, to = toEl.value;
+    if (!from || !to) return;
+    if (from > to) { [from, to] = [to, from]; fromEl.value = from; toEl.value = to; }
+    if (kind === 'chart') { periodRange = { from, to }; updateChartData(); }
+    else { tableRange = { from, to }; renderTable(); }
+}
+function initRangeInputs() {
+    document.getElementById('periodFrom').value = periodRange.from;
+    document.getElementById('periodTo').value = periodRange.to;
+    document.getElementById('tableFrom').value = tableRange.from;
+    document.getElementById('tableTo').value = tableRange.to;
+}
+
+/* ---------- KPI (dla wybranego przedmiotu) ---------- */
+function updateKPIs() {
+    const set = (id, t) => document.getElementById(id).textContent = t;
+    const item = items.find(i => i.id === selectedItemId);
+    if (!item) {
+        ['kpiCurrentPrice', 'kpiLowPrice', 'kpiHighPrice'].forEach(id => set(id, '—'));
+        set('kpiSales', '0');
+        ['kpiCurrentName', 'kpiLowName', 'kpiHighName', 'kpiSalesName'].forEach(id => set(id, 'Brak wybranego przedmiotu'));
+        return;
+    }
+    const today = getTodayString();
+    const todayEntry = item.history.find(h => h.rawDate === today);
+    const last = item.history[item.history.length - 1];
+    const cur = todayEntry || last;
+    set('kpiCurrentPrice', `${formatKinah(cur.price)} Kinah`);
+    set('kpiCurrentName', todayEntry ? `${item.name} · dziś` : `${item.name} · ostatni wpis ${cur.date}`);
+
+    const hist = periodHistory(item);
+    if (hist.length) {
+        const lo = hist.reduce((a, b) => b.price < a.price ? b : a);
+        const hi = hist.reduce((a, b) => b.price > a.price ? b : a);
+        set('kpiLowPrice', `${formatKinah(lo.price)} Kinah`);
+        set('kpiLowName', `${lo.date} · ${periodLabel()}`);
+        set('kpiHighPrice', `${formatKinah(hi.price)} Kinah`);
+        set('kpiHighName', `${hi.date} · ${periodLabel()}`);
+    } else {
+        set('kpiLowPrice', '—'); set('kpiHighPrice', '—');
+        set('kpiLowName', `Brak danych · ${periodLabel()}`);
+        set('kpiHighName', `Brak danych · ${periodLabel()}`);
+    }
+
+    set('kpiSales', formatKinah(item.salesList));
+    set('kpiSalesName', `${item.name} · ofert na rynku`);
+}
+
+/* ---------- Chart ---------- */
+function populateChartSelector() {
+    const select = document.getElementById('itemChartSelect');
+    select.innerHTML = '';
+    items.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.id;
+        opt.textContent = item.name;
+        opt.selected = item.id === selectedItemId;
+        select.appendChild(opt);
+    });
+}
+
+function initMainChart() {
+    const ctx = document.getElementById('mainPriceChart').getContext('2d');
+    const item = items.find(i => i.id === selectedItemId);
+    chartInstance = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: item ? periodHistory(item).map(h => h.date) : [],
+            datasets: [{
+                label: 'Lowest Price (Kinah)',
+                data: item ? periodHistory(item).map(h => h.price) : [],
+                borderColor: '#818cf8', borderWidth: 3,
+                pointBackgroundColor: '#0f172a', pointBorderColor: '#fbbf24',
+                pointBorderWidth: 2, pointRadius: 4, pointHoverRadius: 6,
+                fill: true, backgroundColor: 'rgba(99, 102, 241, 0.1)', tension: 0.35
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: { label: c => `${formatKinah(c.parsed.y)} Kinah` } }
+            },
+            scales: {
+                x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,0.08)' } },
+                y: { ticks: { color: '#94a3b8', callback: v => formatKinah(v) }, grid: { color: 'rgba(148,163,184,0.08)' } }
+            }
+        }
+    });
+}
+
+function updateChartData() {
+    if (!chartInstance) return;
+    const item = items.find(i => i.id === selectedItemId);
+    chartInstance.data.labels = item ? periodHistory(item).map(h => h.date) : [];
+    chartInstance.data.datasets[0].data = item ? periodHistory(item).map(h => h.price) : [];
+    chartInstance.update();
+    updateKPIs();
+}
+
+function selectItemForChart(id) {
+    selectedItemId = id;
+    document.getElementById('itemChartSelect').value = id;
+    updateChartData();
+    renderTable();
+}
+
+/* ---------- Table ---------- */
+function renderTable() {
+    renderCategories();
+    const tbody = document.getElementById('itemTableBody');
+    tbody.innerHTML = '';
+    const q = currentSearchQuery.toLowerCase();
+    const filtered = items
+        .filter(i => (currentFilterCategory === 'Wszystkie' || i.category === currentFilterCategory)
+            && i.name.toLowerCase().includes(q))
+        .sort((a, b) => (b.fav - a.fav));
+
+    document.getElementById('emptyState').classList.toggle('hidden', filtered.length > 0);
+
+    filtered.forEach(item => {
+        const t = getTrend(item);
+        const th = tableHistory(item);
+        const highest = th.length ? th.reduce((a, b) => b.price > a.price ? b : a) : null;
+        const tr = document.createElement('tr');
+        tr.className = `hover:bg-slate-800/40 transition-colors cursor-pointer group ${item.id === selectedItemId ? 'bg-indigo-500/10 border-l-4 border-indigo-500' : ''}`;
+        tr.onclick = () => selectItemForChart(item.id);
+        tr.innerHTML = `
+            <td class="py-3.5 px-4 text-center" onclick="event.stopPropagation(); toggleFav(${item.id})">
+                <i data-lucide="star" class="w-4 h-4 mx-auto ${item.fav ? 'text-amber-400 fill-current' : 'text-slate-600 hover:text-amber-400'}"></i>
+            </td>
+            <td class="py-3.5 px-4 font-semibold text-slate-100">${esc(item.name)}</td>
+            <td class="py-3.5 px-4 text-right font-semibold text-amber-400">${formatKinah(currentEntry(item).price)} Kinah</td>
+            <td class="py-3.5 px-4 text-right font-semibold text-emerald-400">${formatKinah(item.lowestPrice)} Kinah</td>
+            <td class="py-3.5 px-4 text-right font-semibold text-rose-400">${highest ? formatKinah(highest.price) + ' Kinah' : '—'}</td>
+            <td class="py-3.5 px-4 text-center text-xs font-semibold ${t.cls}">${t.arrow} ${t.text}</td>
+            <td class="py-2 px-4">${sparkline(item, t)}</td>
+            <td class="py-3.5 px-4 text-right whitespace-nowrap" onclick="event.stopPropagation()">
+                <button onclick="openEditModal(${item.id})" title="Edytuj / zaktualizuj cenę" class="admin-only p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10">
+                    <i data-lucide="pencil" class="w-4 h-4"></i>
+                </button>
+                <button onclick="promptDeleteItem(${item.id})" title="Usuń z rynku" class="admin-only p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10">
+                    <i data-lucide="trash-2" class="w-4 h-4"></i>
+                </button>
+            </td>`;
+        tbody.appendChild(tr);
+    });
+    lucide.createIcons();
+}
+
+function toggleFav(id) {
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+    item.fav = !item.fav;
+    if (CLOUD) saveFavs(); else persist();
+    renderTable();
+}
+
+/* ---------- Delete ---------- */
+function promptDeleteItem(id) {
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+    pendingDeleteId = id;
+    document.getElementById('confirmDeleteMessage').innerHTML =
+        `Czy na pewno chcesz usunąć przedmiot <strong class="text-white">"${esc(item.name)}"</strong> z rynku?`;
+    const modal = document.getElementById('confirmDeleteModal');
+    const content = document.getElementById('confirmDeleteContent');
+    modal.classList.remove('hidden');
+    setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); }, 10);
+}
+function promptDeleteFromModal() {
+    const id = Number(document.getElementById('formItemId').value);
+    closeModal();
+    if (id) setTimeout(() => promptDeleteItem(id), 220);
+}
+function closeConfirmDeleteModal() {
+    const modal = document.getElementById('confirmDeleteModal');
+    modal.classList.add('opacity-0');
+    document.getElementById('confirmDeleteContent').classList.add('scale-95');
+    setTimeout(() => { modal.classList.add('hidden'); pendingDeleteId = null; }, 200);
+}
+function executeDelete() {
+    if (!pendingDeleteId) return;
+    const id = pendingDeleteId;
+    const item = items.find(i => i.id === id);
+    const name = item ? item.name : 'Przedmiot';
+    items = items.filter(i => i.id !== id);
+    if (selectedItemId === id) selectedItemId = items.length ? items[0].id : null;
+    cloudDelete(id);
+    closeConfirmDeleteModal();
+    refreshAll();
+    showToast('Usunięto z rynku', `Usunięto "${name}".`);
+}
+
+/* ---------- Add / Edit modal ---------- */
+function showModal() {
+    const modal = document.getElementById('itemModal');
+    const content = document.getElementById('modalContent');
+    modal.classList.remove('hidden');
+    setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); }, 10);
+}
+function openAddModal() {
+    document.getElementById('itemForm').reset();
+    document.getElementById('formItemId').value = '';
+    document.getElementById('formDate').value = getTodayString();
+    document.getElementById('modalTitle').textContent = 'Dodaj nowy przedmiot';
+    document.getElementById('modalDeleteBtn').classList.add('hidden');
+    showModal();
+}
+function openEditModal(id) {
+    const item = items.find(i => i.id === id);
+    if (!item) return;
+    document.getElementById('formItemId').value = item.id;
+    document.getElementById('formName').value = item.name;
+    document.getElementById('formCategory').value = item.category;
+    document.getElementById('formSales').value = item.salesList;
+    document.getElementById('formPrice').value = item.lowestPrice;
+    document.getElementById('formDate').value = getTodayString();
+    document.getElementById('modalTitle').textContent = 'Edytuj / zaktualizuj cenę';
+    document.getElementById('modalDeleteBtn').classList.remove('hidden');
+    showModal();
+}
+function closeModal() {
+    const modal = document.getElementById('itemModal');
+    modal.classList.add('opacity-0');
+    document.getElementById('modalContent').classList.add('scale-95');
+    setTimeout(() => modal.classList.add('hidden'), 200);
+}
+
+function saveItem(e) {
+    e.preventDefault();
+    const idVal = document.getElementById('formItemId').value;
+    const name = document.getElementById('formName').value.trim();
+    const category = document.getElementById('formCategory').value;
+    const salesList = parseInt(document.getElementById('formSales').value, 10);
+    const price = parseFloat(document.getElementById('formPrice').value);
+    const rawDate = document.getElementById('formDate').value || getTodayString();
+
+    if (!name || isNaN(salesList) || isNaN(price) || price < 0 || salesList < 0) {
+        showToast('Błąd', 'Uzupełnij poprawnie wszystkie pola.');
+        return;
+    }
+
+    let savedItem = null;
+    if (idVal) {
+        const item = items.find(i => i.id === Number(idVal));
+        if (!item) return;
+        item.name = name;
+        item.category = category;
+        item.salesList = salesList;
+        const existing = item.history.find(h => h.rawDate === rawDate);
+        if (existing) existing.price = price;
+        else item.history.push({ rawDate, date: fmtDate(rawDate), price });
+        item.history.sort((a, b) => a.rawDate.localeCompare(b.rawDate));
+        item.lowestPrice = item.history[item.history.length - 1].price;
+        selectedItemId = item.id;
+        savedItem = item;
+        showToast('Zapisano zmiany', `Zaktualizowano ${name}.`);
+    } else {
+        const newItem = {
+            id: Date.now(), name, category, salesList, lowestPrice: price, fav: false,
+            history: [{ rawDate, date: fmtDate(rawDate), price }]
+        };
+        items.unshift(newItem);
+        selectedItemId = newItem.id;
+        savedItem = newItem;
+        showToast('Dodano przedmiot', `Pomyślnie dodano ${name}.`);
+    }
+    cloudSave(savedItem);
+    refreshAll();
+    closeModal();
+}
+
+/* ---------- Toast / filters ---------- */
+let toastTimer = null;
+function showToast(title, message) {
+    const toast = document.getElementById('toast');
+    document.getElementById('toastTitle').textContent = title;
+    document.getElementById('toastMessage').textContent = message;
+    toast.classList.remove('translate-y-20', 'opacity-0');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
+}
+
+function handleSearch(val) { currentSearchQuery = val; renderTable(); }
+
+const CATEGORIES = [
+    { key: 'Wszystkie', label: 'Wszystkie',           icon: 'layout-grid' },
+    { key: 'Materiały', label: 'Materiały',           icon: 'hammer' },
+    { key: 'Kamienie',  label: 'Kamienie Szlachetne', icon: 'gem' },
+    { key: 'Inne',      label: 'Inne',                icon: 'package' }
+];
+
+function renderCategories() {
+    const list = document.getElementById('categoryList');
+    if (!list) return;
+    list.innerHTML = CATEGORIES.map(c => {
+        const count = c.key === 'Wszystkie' ? items.length : items.filter(i => i.category === c.key).length;
+        const active = c.key === currentFilterCategory;
+        return `<button onclick="filterCategory('${c.key}')" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all border ${active
+            ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30'
+            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border-transparent'}">
+            <i data-lucide="${c.icon}" class="w-4 h-4 flex-shrink-0 ${active ? 'text-indigo-400' : ''}"></i>
+            <span class="truncate">${c.label}</span>
+            <span class="lg:ml-auto text-[11px] px-1.5 py-0.5 rounded-md ${active ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-800 text-slate-500'}">${count}</span>
+        </button>`;
+    }).join('');
+}
+
+function filterCategory(cat) {
+    currentFilterCategory = cat;
+    renderTable();
+}
+
+
+/* ---------- Eksport / Import ---------- */
+function exportData() {
+    const payload = { app: 'aion2-market', version: 1, exportedAt: new Date().toISOString(), items };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `aion2-market-${getTodayString()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    showToast('Wyeksportowano', `Zapisano ${items.length} przedmiotów do pliku JSON.`);
+}
+
+function normalizeImported(raw) {
+    const list = Array.isArray(raw) ? raw : (raw && Array.isArray(raw.items) ? raw.items : null);
+    if (!list) throw new Error('Nieprawidłowy format pliku.');
+    const usedIds = new Set();
+    return list.map((it, idx) => {
+        if (!it || typeof it.name !== 'string' || !Array.isArray(it.history) || !it.history.length)
+            throw new Error(`Błędny wpis nr ${idx + 1}.`);
+        const history = it.history.map(h => {
+            const price = Number(h.price);
+            if (!/^\d{4}-\d{2}-\d{2}$/.test(h.rawDate || '') || !isFinite(price))
+                throw new Error(`Błędna historia ceny w "${it.name}".`);
+            return { rawDate: h.rawDate, date: fmtDate(h.rawDate), price };
+        }).sort((a, b) => a.rawDate.localeCompare(b.rawDate));
+        let id = Number(it.id);
+        if (!isFinite(id) || usedIds.has(id)) id = Date.now() + idx;
+        usedIds.add(id);
+        return {
+            id,
+            name: it.name.trim() || 'Bez nazwy',
+            category: ['Materiały', 'Kamienie', 'Inne'].includes(it.category) ? it.category : 'Inne',
+            salesList: Math.max(0, parseInt(it.salesList, 10) || 0),
+            lowestPrice: history[history.length - 1].price,
+            fav: !!it.fav,
+            history
+        };
+    });
+}
+
+function importData(input) {
+    const file = input.files && input.files[0];
+    input.value = '';
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+        try {
+            const imported = normalizeImported(JSON.parse(reader.result));
+            if (!confirm(`Wczytać ${imported.length} przedmiotów z pliku?\nObecne dane (${items.length} przedmiotów) zostaną zastąpione.`)) return;
+            items = imported;
+            selectedItemId = items.length ? items[0].id : null;
+            cloudReplaceAll(items);
+            refreshAll();
+            showToast('Zaimportowano', `Wczytano ${items.length} przedmiotów.`);
+        } catch (err) {
+            showToast('Błąd importu', err.message || 'Nie udało się odczytać pliku.');
+        }
+    };
+    reader.onerror = () => showToast('Błąd importu', 'Nie udało się odczytać pliku.');
+    reader.readAsText(file);
+}
+
+/* ---------- Wspólna baza (Firebase Firestore) ---------- */
+function loadFavs() {
+    try { return JSON.parse(localStorage.getItem('aion2_favs') || '[]'); } catch (e) { return []; }
+}
+function saveFavs() {
+    try { localStorage.setItem('aion2_favs', JSON.stringify(items.filter(i => i.fav).map(i => i.id))); } catch (e) { /* ignore */ }
+}
+function cloudFail(e) {
+    console.error(e);
+    showToast('Błąd zapisu', 'Brak uprawnień lub połączenia z bazą.');
+}
+function cloudSave(item) { return CLOUD ? window.cloud.saveItem(item).catch(cloudFail) : persist(); }
+function cloudDelete(id) { return CLOUD ? window.cloud.deleteItem(id).catch(cloudFail) : persist(); }
+function cloudReplaceAll(list) { return CLOUD ? window.cloud.replaceAll(list).catch(cloudFail) : persist(); }
+
+function updateAuthButton() {
+    const b = document.getElementById('authBtn');
+    if (!b) return;
+    b.innerHTML = currentUser
+        ? '<i data-lucide="log-out" class="w-4 h-4"></i><span class="hidden sm:inline">Wyloguj</span>'
+        : '<i data-lucide="log-in" class="w-4 h-4"></i><span class="hidden sm:inline">Zaloguj</span>';
+    b.title = currentUser ? `${currentUser.email} — ${canEdit ? 'edycja włączona' : 'tylko odczyt'}` : 'Zaloguj się, aby edytować';
+    lucide.createIcons();
+}
+function toggleAuth() {
+    if (!window.cloud) return;
+    if (currentUser) window.cloud.signOut();
+    else window.cloud.signIn().catch(() => showToast('Logowanie', 'Nie udało się zalogować.'));
+}
+function initCloud() {
+    const btn = document.getElementById('authBtn');
+    if (!CLOUD) { btn.classList.add('hidden'); return; }
+    document.body.classList.add('read-only');
+    if (!window.cloud) { showToast('Błąd', 'Nie udało się połączyć z Firebase.'); return; }
+    window.cloud.onAuth(user => {
+        currentUser = user;
+        canEdit = !!(user && user.email && user.email.toLowerCase() === String(APP.ownerEmail || '').toLowerCase());
+        document.body.classList.toggle('read-only', !canEdit);
+        updateAuthButton();
+    });
+    window.cloud.onItems(list => {
+        const favs = new Set(loadFavs());
+        items = list.map(i => ({ ...i, fav: favs.has(i.id) })).sort((a, b) => a.name.localeCompare(b.name));
+        if (!items.some(i => i.id === selectedItemId)) selectedItemId = items.length ? items[0].id : null;
+        refreshAll();
+    }, () => showToast('Błąd bazy', 'Brak dostępu do danych (sprawdź reguły Firestore).'));
+}
+    </script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
+        import { getFirestore, collection, doc, onSnapshot, setDoc, deleteDoc, writeBatch, getDocs }
+            from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged }
+            from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+
+        const cfg = (window.APP_CONFIG || {}).firebase;
+        if (cfg && cfg.apiKey && !String(cfg.apiKey).startsWith('WKLEJ')) {
+            const app = initializeApp(cfg);
+            const db = getFirestore(app);
+            const auth = getAuth(app);
+            const col = collection(db, 'items');
+            const strip = ({ fav, ...data }) => data; // ulubione są tylko lokalne
+            window.cloud = {
+                onItems: (cb, onErr) => onSnapshot(col, snap => cb(snap.docs.map(d => d.data())), onErr),
+                saveItem: item => setDoc(doc(db, 'items', String(item.id)), strip(item)),
+                deleteItem: id => deleteDoc(doc(db, 'items', String(id))),
+                async replaceAll(list) {
+                    const existing = await getDocs(col);
+                    const keep = new Set(list.map(i => String(i.id)));
+                    const batch = writeBatch(db);
+                    existing.forEach(d => { if (!keep.has(d.id)) batch.delete(d.ref); });
+                    list.forEach(i => batch.set(doc(db, 'items', String(i.id)), strip(i)));
+                    return batch.commit();
+                },
+                onAuth: cb => onAuthStateChanged(auth, cb),
+                signIn: () => signInWithPopup(auth, new GoogleAuthProvider()),
+                signOut: () => signOut(auth)
+            };
+        }
+    </script>
+</body>
+</html>
