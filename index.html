@@ -251,6 +251,20 @@
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Waga (Priorytet wyświetlania) *</label>
+                        <select id="formWeight" required class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white">
+                            <option value="1">1 - Unique</option>
+                            <option value="2">2 - Rare</option>
+                            <option value="3">3 - Common</option>
+                            <option value="4">4 - Normal</option>
+                        </select>
+                    </div>
+                    <div>
+                        <!-- Tutaj możesz zostawić inne pole, np. Data wpisu -->
+                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
                         <label class="block text-xs font-medium text-slate-300 mb-1.5">Sales List (oferty) *</label>
                         <input type="number" id="formSales" required min="0" placeholder="151" class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white placeholder:text-slate-600">
                     </div>
@@ -571,14 +585,6 @@ function renderTable() {
     const tbody = document.getElementById('itemTableBody');
     tbody.innerHTML = '';
     const q = currentSearchQuery.toLowerCase();
-    
-// Definicja wagi rzadkości na podstawie przedrostka nazwy przedmiotu
-    function getItemWeight(name) {
-        if (name.startsWith('Radiant')) return 1; // Złote (najwyższa waga - góra)
-        if (name.startsWith('Pure')) return 2;    // Niebieskie
-        if (name.startsWith('Fine') || name.startsWith('Fresh')) return 3; // Zielone
-        return 4; // Zwykłe / Szare (najniższa waga - dół)
-    }
 
     const filtered = items
         .filter(i => {
@@ -591,9 +597,9 @@ function renderTable() {
             // 1. Ulubione zawsze na górze
             if (b.fav !== a.fav) return b.fav - a.fav;
 
-            // 2. Sortowanie wg wagi (jakości z gry: Radiant -> Pure -> Fine/Fresh -> Zwykłe)
-            const weightA = getItemWeight(a.name);
-            const weightB = getItemWeight(b.name);
+            // 2. Sortowanie bezpośrednio po zdefiniowanej wadze przedmiotu (1 -> 2 -> 3 -> 4)
+            const weightA = a.weight !== undefined ? a.weight : 4;
+            const weightB = b.weight !== undefined ? b.weight : 4;
             if (weightA !== weightB) return weightA - weightB;
 
             // 3. Alfabetycznie w ramach tej samej wagi
@@ -704,6 +710,7 @@ function openEditModal(id) {
     document.getElementById('modalTitle').textContent = 'Edytuj / zaktualizuj cenę';
     document.getElementById('modalDeleteBtn').classList.remove('hidden');
     document.getElementById('formSubCategory').value = item.subCategory || 'Miscellaneous';
+    document.getElementById('formWeight').value = item.weight || 4;
     showModal();
 }
 function closeModal() {
@@ -722,6 +729,7 @@ function saveItem(e) {
     const price = parseFloat(document.getElementById('formPrice').value);
     const rawDate = document.getElementById('formDate').value || getTodayString();
     const subCategory = document.getElementById('formSubCategory').value;
+    const weight = parseInt(document.getElementById('formWeight').value, 10) || 4;
 
     if (!name || isNaN(salesList) || isNaN(price) || price < 0 || salesList < 0) {
         showToast('Błąd', 'Uzupełnij poprawnie wszystkie pola.');
@@ -736,6 +744,7 @@ function saveItem(e) {
         item.category = category;
         item.subCategory = subCategory;
         item.salesList = salesList;
+        item.weight = weight;
         const existing = item.history.find(h => h.rawDate === rawDate);
         if (existing) existing.price = price;
         else item.history.push({ rawDate, date: fmtDate(rawDate), price });
@@ -746,7 +755,7 @@ function saveItem(e) {
         showToast('Zapisano zmiany', `Zaktualizowano ${name}.`);
     } else {
         const newItem = {
-            id: Date.now(), name, category, subCategory, salesList, lowestPrice: price, fav: false,
+            id: Date.now(), name, category, subCategory, weight, salesList, lowestPrice: price, fav: false,
             history: [{ rawDate, date: fmtDate(rawDate), price }]
         };
         items.unshift(newItem);
@@ -874,6 +883,7 @@ function normalizeImported(raw) {
             name: it.name.trim() || 'Bez nazwy',
             category: it.category || 'Inne',
             subCategory: ['Gathering Material', 'Crafting Material', 'Substance Morphing', 'Special Materials', 'Miscellaneous'].includes(it.subCategory) ? it.subCategory : 'Miscellaneous',
+            weight: parseInt(it.weight, 10) || 4,
             salesList: Math.max(0, parseInt(it.salesList, 10) || 0),
             lowestPrice,
             fav: !!it.fav,
