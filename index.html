@@ -321,7 +321,8 @@ function seed(id, name, category, salesList, price, prev) {
     const history = [];
     if (prev) history.push({ rawDate: '2026-10-20', date: fmtDate('2026-10-20'), price: prev });
     history.push({ rawDate: today, date: fmtDate(today), price });
-    return { id, name, category, salesList, lowestPrice: price, fav: false, history };
+    const lowestPrice = history.reduce((min, h) => h.price < min ? h.price : min, history[0].price);
+    return { id, name, category, salesList, lowestPrice, fav: false, history };
 }
 
 function loadItems() {
@@ -390,7 +391,7 @@ function getTrend(item) {
     const up = pct > 0;
     return {
         pct,
-        cls: up ? 'text-rose-400' : 'text-emerald-400', // wzrost ceny = drożej dla kupującego
+        cls: up ? 'text-rose-400' : 'text-emerald-400',
         arrow: up ? '▲' : '▼',
         text: `${up ? '+' : ''}${pct.toFixed(1)}%`
     };
@@ -572,6 +573,7 @@ function renderTable() {
         const t = getTrend(item);
         const th = tableHistory(item);
         const highest = th.length ? th.reduce((a, b) => b.price > a.price ? b : a) : null;
+        const realLowest = item.history.reduce((min, h) => h.price < min ? h.price : min, item.history[0].price);
         const tr = document.createElement('tr');
         tr.className = `hover:bg-slate-800/40 transition-colors cursor-pointer group ${item.id === selectedItemId ? 'bg-indigo-500/10 border-l-4 border-indigo-500' : ''}`;
         tr.onclick = () => selectItemForChart(item.id);
@@ -581,7 +583,7 @@ function renderTable() {
             </td>
             <td class="py-3.5 px-4 font-semibold text-slate-100">${esc(item.name)}</td>
             <td class="py-3.5 px-4 text-right font-semibold text-amber-400">${formatKinah(currentEntry(item).price)} Kinah</td>
-            <td class="py-3.5 px-4 text-right font-semibold text-emerald-400">${formatKinah(item.lowestPrice)} Kinah</td>
+            <td class="py-3.5 px-4 text-right font-semibold text-emerald-400">${formatKinah(realLowest)} Kinah</td>
             <td class="py-3.5 px-4 text-right font-semibold text-rose-400">${highest ? formatKinah(highest.price) + ' Kinah' : '—'}</td>
             <td class="py-3.5 px-4 text-center text-xs font-semibold ${t.cls}">${t.arrow} ${t.text}</td>
             <td class="py-2 px-4">${sparkline(item, t)}</td>
@@ -702,7 +704,7 @@ function saveItem(e) {
         if (existing) existing.price = price;
         else item.history.push({ rawDate, date: fmtDate(rawDate), price });
         item.history.sort((a, b) => a.rawDate.localeCompare(b.rawDate));
-        item.lowestPrice = item.history[item.history.length - 1].price;
+        item.lowestPrice = item.history.reduce((min, h) => h.price < min ? h.price : min, item.history[0].price);
         selectedItemId = item.id;
         savedItem = item;
         showToast('Zapisano zmiany', `Zaktualizowano ${name}.`);
@@ -794,12 +796,13 @@ function normalizeImported(raw) {
         let id = Number(it.id);
         if (!isFinite(id) || usedIds.has(id)) id = Date.now() + idx;
         usedIds.add(id);
+        const lowestPrice = history.reduce((min, h) => h.price < min ? h.price : min, history[0].price);
         return {
             id,
             name: it.name.trim() || 'Bez nazwy',
             category: ['Materiały', 'Kamienie', 'Inne'].includes(it.category) ? it.category : 'Inne',
             salesList: Math.max(0, parseInt(it.salesList, 10) || 0),
-            lowestPrice: history[history.length - 1].price,
+            lowestPrice,
             fav: !!it.fav,
             history
         };
@@ -917,7 +920,7 @@ function initCloud() {
             const db = getFirestore(app);
             const auth = getAuth(app);
             const col = collection(db, 'items');
-            const strip = ({ fav, ...data }) => data; // ulubione są tylko lokalne
+            const strip = ({ fav, ...data }) => data;
             window.cloud = {
                 onItems: (cb, onErr) => onSnapshot(col, snap => cb(snap.docs.map(d => d.data())), onErr),
                 saveItem: item => setDoc(doc(db, 'items', String(item.id)), strip(item)),
