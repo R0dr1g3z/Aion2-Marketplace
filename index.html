@@ -234,11 +234,13 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-medium text-slate-300 mb-1.5">Kategoria *</label>
-                        <select id="formCategory" required class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white">
-                            <option value="Materiały">Materiały</option>
-                            <option value="Kamienie">Kamienie Szlachetne</option>
-                            <option value="Inne">Inne</option>
-                        </select>
+                            <select id="formCategory" required class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white">
+                                <option value="Gathering Material">Gathering Material</option>
+                                <option value="Crafting Material">Crafting Material</option>
+                                <option value="Substance Morphing">Substance Morphing</option>
+                                <option value="Special Materials">Special Materials</option>
+                                <option value="Miscellaneous">Miscellaneous</option>
+                            </select>
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-300 mb-1.5">Sales List (oferty) *</label>
@@ -737,10 +739,12 @@ function showToast(title, message) {
 function handleSearch(val) { currentSearchQuery = val; renderTable(); }
 
 const CATEGORIES = [
-    { key: 'Wszystkie', label: 'Wszystkie',           icon: 'layout-grid' },
-    { key: 'Materiały', label: 'Materiały',           icon: 'hammer' },
-    { key: 'Kamienie',  label: 'Kamienie Szlachetne', icon: 'gem' },
-    { key: 'Inne',      label: 'Inne',                icon: 'package' }
+    { key: 'Wszystkie',          label: 'Wszystkie',            icon: 'layout-grid' },
+    { key: 'Gathering Material', label: 'Gathering Material',  icon: 'pickaxe' },
+    { key: 'Crafting Material',  label: 'Crafting Material',   icon: 'hammer' },
+    { key: 'Substance Morphing', label: 'Substance Morphing',  icon: 'sparkles' },
+    { key: 'Special Materials',  label: 'Special Materials',   icon: 'shield-alert' },
+    { key: 'Miscellaneous',      label: 'Miscellaneous',       icon: 'package' }
 ];
 
 function renderCategories() {
@@ -800,7 +804,7 @@ function normalizeImported(raw) {
         return {
             id,
             name: it.name.trim() || 'Bez nazwy',
-            category: ['Materiały', 'Kamienie', 'Inne'].includes(it.category) ? it.category : 'Inne',
+            category: ['Gathering Material', 'Crafting Material', 'Substance Morphing', 'Special Materials', 'Miscellaneous'].includes(it.category) ? it.category : 'Miscellaneous',
             salesList: Math.max(0, parseInt(it.salesList, 10) || 0),
             lowestPrice,
             fav: !!it.fav,
