@@ -61,7 +61,7 @@
                     </div>
                 </div>
                 <div class="flex items-center gap-3">
-                    <button onclick="exportData()" title="Pobierz kopię danych (JSON)" class="p-2 rounded-xl text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 border border-slate-800 transition-all">
+                    <button onclick="exportData()" title="Pobierz kopię danych (JSON)" class="admin-only p-2 rounded-xl text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 border border-slate-800 transition-all">
                         <i data-lucide="download" class="w-4 h-4"></i>
                     </button>
                     <button onclick="document.getElementById('importFile').click()" title="Wczytaj kopię danych (JSON)" class="admin-only p-2 rounded-xl text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 border border-slate-800 transition-all">
@@ -73,7 +73,13 @@
                         <span class="hidden sm:inline">Dodaj przedmiot</span>
                     </button>
                     <div class="h-8 w-[1px] bg-slate-800 hidden sm:block"></div>
-                    <button id="authBtn" onclick="toggleAuth()" class="flex items-center gap-2 px-3 h-9 rounded-xl bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 hover:text-white transition-all"><i data-lucide="log-in" class="w-4 h-4"></i><span class="hidden sm:inline">Zaloguj</span></button>
+                    <div id="authWrap" class="relative">
+                        <button id="authBtn" onclick="toggleAuth()" class="flex items-center gap-2 px-3 h-9 rounded-xl bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 hover:text-white transition-all"><i data-lucide="log-in" class="w-4 h-4"></i><span class="hidden sm:inline">Zaloguj</span></button>
+                        <div id="userMenu" class="hidden absolute right-0 top-full mt-2 w-60 glass-card rounded-xl p-2 shadow-2xl z-40">
+                            <p id="userMenuInfo" class="px-3 py-2 text-[11px] text-slate-400 break-words"></p>
+                            <button onclick="logout()" class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-rose-400 hover:bg-rose-500/10 transition-all"><i data-lucide="log-out" class="w-4 h-4"></i> Wyloguj się</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -837,20 +843,48 @@ function cloudSave(item) { return CLOUD ? window.cloud.saveItem(item).catch(clou
 function cloudDelete(id) { return CLOUD ? window.cloud.deleteItem(id).catch(cloudFail) : persist(); }
 function cloudReplaceAll(list) { return CLOUD ? window.cloud.replaceAll(list).catch(cloudFail) : persist(); }
 
+const AUTH_BTN_GUEST = 'flex items-center gap-2 px-3 h-9 rounded-xl bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 hover:text-white transition-all';
+const AUTH_BTN_USER = 'flex items-center gap-2 pl-1 pr-3 h-9 rounded-full bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 hover:text-white transition-all';
+
 function updateAuthButton() {
     const b = document.getElementById('authBtn');
     if (!b) return;
-    b.innerHTML = currentUser
-        ? '<i data-lucide="log-out" class="w-4 h-4"></i><span class="hidden sm:inline">Wyloguj</span>'
-        : '<i data-lucide="log-in" class="w-4 h-4"></i><span class="hidden sm:inline">Zaloguj</span>';
-    b.title = currentUser ? `${currentUser.email} — ${canEdit ? 'edycja włączona' : 'tylko odczyt'}` : 'Zaloguj się, aby edytować';
+    document.getElementById('userMenu').classList.add('hidden');
+    if (currentUser) {
+        const name = currentUser.displayName || currentUser.email || 'Użytkownik';
+        const initial = esc(name.trim().charAt(0).toUpperCase());
+        const avatar = currentUser.photoURL
+            ? `<img src="${esc(currentUser.photoURL)}" alt="" referrerpolicy="no-referrer" class="w-7 h-7 rounded-full object-cover border border-slate-600">`
+            : `<span class="w-7 h-7 rounded-full bg-indigo-500/30 text-indigo-200 flex items-center justify-center text-xs font-bold">${initial}</span>`;
+        b.className = AUTH_BTN_USER;
+        b.innerHTML = `${avatar}<span class="hidden sm:inline max-w-[140px] truncate">${esc(name)}</span>`;
+        b.title = 'Menu użytkownika';
+        document.getElementById('userMenuInfo').textContent =
+            `${currentUser.email || ''} — ${canEdit ? 'edycja włączona' : 'tylko odczyt'}`;
+    } else {
+        b.className = AUTH_BTN_GUEST;
+        b.innerHTML = '<i data-lucide="log-in" class="w-4 h-4"></i><span class="hidden sm:inline">Zaloguj</span>';
+        b.title = 'Zaloguj się, aby edytować';
+    }
     lucide.createIcons();
 }
 function toggleAuth() {
     if (!window.cloud) return;
-    if (currentUser) window.cloud.signOut();
-    else window.cloud.signIn().catch(() => showToast('Logowanie', 'Nie udało się zalogować.'));
+    if (currentUser) { document.getElementById('userMenu').classList.toggle('hidden'); return; }
+    window.cloud.signIn().catch(() => showToast('Logowanie', 'Nie udało się zalogować.'));
 }
+function logout() {
+    document.getElementById('userMenu').classList.add('hidden');
+    if (window.cloud) window.cloud.signOut();
+}
+document.addEventListener('click', e => {
+    const menu = document.getElementById('userMenu');
+    if (menu && !menu.classList.contains('hidden') && !e.target.closest('#authWrap')) menu.classList.add('hidden');
+});
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.getElementById('userMenu')?.classList.add('hidden');
+});
+
 function initCloud() {
     const btn = document.getElementById('authBtn');
     if (!CLOUD) { btn.classList.add('hidden'); return; }
