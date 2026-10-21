@@ -817,12 +817,40 @@ function importData(input) {
     reader.onload = () => {
         try {
             const imported = normalizeImported(JSON.parse(reader.result));
-            if (!confirm(`Wczytać ${imported.length} przedmiotów z pliku?\nObecne dane (${items.length} przedmiotów) zostaną zastąpione.`)) return;
-            items = imported;
+            if (!confirm(`Aktualizować i dodać ${imported.length} przedmiotów z pliku?\nIstniejące przedmioty zostaną zaktualizowane, a reszta pozostanie bez zmian.`)) return;
+
+            // Tworzymy słownik istniejących przedmiotów według nazwy (lub ID)
+            const itemMap = new Map(items.map(i => [i.name.toLowerCase(), i]));
+
+            imported.forEach(newItem => {
+                const key = newItem.name.toLowerCase();
+                if (itemMap.has(key)) {
+                    // PRZEDMIOT ISTNIEJE: Aktualizujemy jego dane i dodajemy nowe wpisy w historii
+                    const existing = itemMap.get(key);
+                    existing.salesList = newItem.salesList;
+                    existing.lowestPrice = newItem.lowestPrice;
+
+                    // Scalanie historii cen (unikamy duplikatów dla tych samych dat)
+                    newItem.history.forEach(newH => {
+                        const hIdx = existing.history.findIndex(h => h.rawDate === newH.rawDate);
+                        if (hIdx >= 0) {
+                            existing.history[hIdx].price = newH.price;
+                        } else {
+                            existing.history.push(newH);
+                        }
+                    });
+                    existing.history.sort((a, b) => a.rawDate.localeCompare(b.rawDate));
+                    cloudSave(existing); // Zapis do Firebase/LocalStorage pojedynczego przedmiotu
+                } else {
+                    // NOWY PRZEDMIOT: Dodajemy go do listy
+                    items.push(newItem);
+                    cloudSave(newItem);
+                }
+            });
+
             selectedItemId = items.length ? items[0].id : null;
-            cloudReplaceAll(items);
             refreshAll();
-            showToast('Zaimportowano', `Wczytano ${items.length} przedmiotów.`);
+            showToast('Zaimportowano', `Zaktualizowano rynek na podstawie pliku.`);
         } catch (err) {
             showToast('Błąd importu', err.message || 'Nie udało się odczytać pliku.');
         }
