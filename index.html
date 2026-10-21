@@ -361,6 +361,7 @@ let pendingDeleteId = null;
 let currentFilterCategory = 'Wszystkie';
 let currentSearchQuery = '';
 let chartInstance = null;
+let isOtherExpanded = false;
 
 document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
@@ -573,9 +574,10 @@ function renderTable() {
     const filtered = items
         .filter(i => {
             if (currentFilterCategory === 'Wszystkie') return true;
-            return (i.subCategory === currentFilterCategory || i.category === currentFilterCategory);
+            if (currentFilterCategory === 'Inne') return i.category === 'Inne' || !i.category;
+            return i.subCategory === currentFilterCategory;
         })
-        .filter(i => i.name.toLowerCase().includes(q))
+        .filter(i => i.name.toLowerCase().includes(q));
 
     document.getElementById('emptyState').classList.toggle('hidden', filtered.length > 0);
 
@@ -771,31 +773,47 @@ function renderCategories() {
         <span class="lg:ml-auto text-[11px] px-1.5 py-0.5 rounded-md ${allActive ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-800 text-slate-500'}">${items.length}</span>
     </button>`;
 
-    // Główna kategoria "Inne" z podkategoriami
-    const isOtherMainActive = currentFilterCategory === 'Inne';
+    // Obliczenie łącznej liczby przedmiotów w kategorii "Inne"
+    const otherCount = items.filter(i => i.category === 'Inne' || !i.category).length;
+    const isOtherActive = currentFilterCategory === 'Inne';
+
+    // Główna kategoria "INNE" jako klikalny przycisk
     html += `<div class="mt-2 pt-2 border-t border-slate-800/80">
-        <div class="px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
-            <i data-lucide="folder" class="w-3.5 h-3.5 text-indigo-400"></i> Inne
-        </div>
-        <div class="ml-2 pl-2 border-l border-slate-800 space-y-1 mt-1">`;
-
-    SUB_CATEGORIES.forEach(sub => {
-        const count = items.filter(i => (i.category === 'Inne' || !i.category) && i.subCategory === sub.key).length;
-        const active = currentFilterCategory === sub.key;
-        html += `<button onclick="filterCategory('${sub.key}')" class="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium transition-all ${active ? 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/30' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'}">
-            <i data-lucide="${sub.icon}" class="w-3.5 h-3.5 flex-shrink-0 ${active ? 'text-indigo-400' : ''}"></i>
-            <span class="truncate">${sub.label}</span>
-            <span class="ml-auto text-[10px] px-1.5 py-0.2 rounded ${active ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-800 text-slate-500'}">${count}</span>
+        <button onclick="toggleOtherCategory()" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-wider transition-all border ${isOtherActive ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border-transparent'}">
+            <i data-lucide="folder" class="w-4 h-4 flex-shrink-0 text-indigo-400"></i>
+            <span class="truncate">Inne</span>
+            <span class="ml-auto text-[11px] px-1.5 py-0.5 rounded-md ${isOtherActive ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-800 text-slate-500'}">${otherCount}</span>
+            <i data-lucide="${isOtherExpanded ? 'chevron-down' : 'chevron-right'}" class="w-3.5 h-3.5 text-slate-500 ml-1"></i>
         </button>`;
-    });
 
-    html += `</div></div>`;
+    // Podkategorie wyświetlane tylko wtedy, gdy isOtherExpanded === true
+    if (isOtherExpanded) {
+        html += `<div class="ml-3 pl-2 border-l border-slate-800 space-y-1 mt-1">`;
+        SUB_CATEGORIES.forEach(sub => {
+            const count = items.filter(i => (i.category === 'Inne' || !i.category) && i.subCategory === sub.key).length;
+            const active = currentFilterCategory === sub.key;
+            html += `<button onclick="filterCategory('${sub.key}')" class="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium transition-all ${active ? 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/30' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'}">
+                <i data-lucide="${sub.icon}" class="w-3.5 h-3.5 flex-shrink-0 ${active ? 'text-indigo-400' : ''}"></i>
+                <span class="truncate">${sub.label}</span>
+                <span class="ml-auto text-[10px] px-1.5 py-0.2 rounded ${active ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-800 text-slate-500'}">${count}</span>
+            </button>`;
+        });
+        html += `</div>`;
+    }
+
+    html += `</div>`;
     list.innerHTML = html;
+    lucide.createIcons();
 }
 
 function filterCategory(cat) {
     currentFilterCategory = cat;
     renderTable();
+}
+
+function toggleOtherCategory() {
+    isOtherExpanded = !isOtherExpanded; // Przełącza stan rozwinięcia
+    filterCategory('Inne');              // Filtruje tabelę po głównej kategorii 'Inne'
 }
 
 
