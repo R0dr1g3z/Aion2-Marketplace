@@ -233,29 +233,35 @@
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Kategoria *</label>
-                            <select id="formCategory" required class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white">
-                                <option value="Gathering Material">Gathering Material</option>
-                                <option value="Crafting Material">Crafting Material</option>
-                                <option value="Substance Morphing">Substance Morphing</option>
-                                <option value="Special Materials">Special Materials</option>
-                                <option value="Miscellaneous">Miscellaneous</option>
-                            </select>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Kategoria główna *</label>
+                        <select id="formCategory" required class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white">
+                            <option value="Inne">Inne</option>
+                        </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Sales List (oferty) *</label>
-                        <input type="number" id="formSales" required min="0" placeholder="151" class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white placeholder:text-slate-600">
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Podkategoria *</label>
+                        <select id="formSubCategory" required class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white">
+                            <option value="Gathering Material">Gathering Material</option>
+                            <option value="Crafting Material">Crafting Material</option>
+                            <option value="Substance Morphing">Substance Morphing</option>
+                            <option value="Special Materials">Special Materials</option>
+                            <option value="Miscellaneous">Miscellaneous</option>
+                        </select>
                     </div>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Sales List (oferty) *</label>
+                        <input type="number" id="formSales" required min="0" placeholder="151" class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white placeholder:text-slate-600">
+                    </div>
+                    <div>
                         <label class="block text-xs font-medium text-slate-300 mb-1.5">Lowest Sale Price (Kinah) *</label>
                         <input type="number" id="formPrice" required min="0" placeholder="240000" class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white placeholder:text-slate-600">
                     </div>
-                    <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Data wpisu *</label>
-                        <input type="date" id="formDate" required class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white">
-                    </div>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Data wpisu *</label>
+                    <input type="date" id="formDate" required class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white">
                 </div>
                 <div class="pt-4 border-t border-slate-800 flex items-center justify-between">
                     <button type="button" id="modalDeleteBtn" onclick="promptDeleteFromModal()" class="hidden px-3 py-2 text-xs font-semibold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-xl transition-all">Usuń przedmiot</button>
@@ -565,9 +571,11 @@ function renderTable() {
     tbody.innerHTML = '';
     const q = currentSearchQuery.toLowerCase();
     const filtered = items
-        .filter(i => (currentFilterCategory === 'Wszystkie' || i.category === currentFilterCategory)
-            && i.name.toLowerCase().includes(q))
-        .sort((a, b) => (b.fav - a.fav));
+        .filter(i => {
+            if (currentFilterCategory === 'Wszystkie') return true;
+            return (i.subCategory === currentFilterCategory || i.category === currentFilterCategory);
+        })
+        .filter(i => i.name.toLowerCase().includes(q))
 
     document.getElementById('emptyState').classList.toggle('hidden', filtered.length > 0);
 
@@ -672,6 +680,7 @@ function openEditModal(id) {
     document.getElementById('formDate').value = getTodayString();
     document.getElementById('modalTitle').textContent = 'Edytuj / zaktualizuj cenę';
     document.getElementById('modalDeleteBtn').classList.remove('hidden');
+    document.getElementById('formSubCategory').value = item.subCategory || 'Miscellaneous';
     showModal();
 }
 function closeModal() {
@@ -689,6 +698,7 @@ function saveItem(e) {
     const salesList = parseInt(document.getElementById('formSales').value, 10);
     const price = parseFloat(document.getElementById('formPrice').value);
     const rawDate = document.getElementById('formDate').value || getTodayString();
+    const subCategory = document.getElementById('formSubCategory').value;
 
     if (!name || isNaN(salesList) || isNaN(price) || price < 0 || salesList < 0) {
         showToast('Błąd', 'Uzupełnij poprawnie wszystkie pola.');
@@ -701,6 +711,7 @@ function saveItem(e) {
         if (!item) return;
         item.name = name;
         item.category = category;
+        item.subCategory = subCategory;
         item.salesList = salesList;
         const existing = item.history.find(h => h.rawDate === rawDate);
         if (existing) existing.price = price;
@@ -712,7 +723,7 @@ function saveItem(e) {
         showToast('Zapisano zmiany', `Zaktualizowano ${name}.`);
     } else {
         const newItem = {
-            id: Date.now(), name, category, salesList, lowestPrice: price, fav: false,
+            id: Date.now(), name, category, subCategory, salesList, lowestPrice: price, fav: false,
             history: [{ rawDate, date: fmtDate(rawDate), price }]
         };
         items.unshift(newItem);
@@ -738,29 +749,48 @@ function showToast(title, message) {
 
 function handleSearch(val) { currentSearchQuery = val; renderTable(); }
 
-const CATEGORIES = [
-    { key: 'Wszystkie',          label: 'Wszystkie',            icon: 'layout-grid' },
-    { key: 'Gathering Material', label: 'Gathering Material',  icon: 'pickaxe' },
-    { key: 'Crafting Material',  label: 'Crafting Material',   icon: 'hammer' },
-    { key: 'Substance Morphing', label: 'Substance Morphing',  icon: 'sparkles' },
-    { key: 'Special Materials',  label: 'Special Materials',   icon: 'shield-alert' },
-    { key: 'Miscellaneous',      label: 'Miscellaneous',       icon: 'package' }
+const SUB_CATEGORIES = [
+    { key: 'Gathering Material', label: 'Gathering Material', icon: 'pickaxe' },
+    { key: 'Crafting Material',  label: 'Crafting Material',  icon: 'hammer' },
+    { key: 'Substance Morphing', label: 'Substance Morphing', icon: 'sparkles' },
+    { key: 'Special Materials',  label: 'Special Materials',  icon: 'shield-alert' },
+    { key: 'Miscellaneous',      label: 'Miscellaneous',      icon: 'package' }
 ];
 
 function renderCategories() {
     const list = document.getElementById('categoryList');
     if (!list) return;
-    list.innerHTML = CATEGORIES.map(c => {
-        const count = c.key === 'Wszystkie' ? items.length : items.filter(i => i.category === c.key).length;
-        const active = c.key === currentFilterCategory;
-        return `<button onclick="filterCategory('${c.key}')" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all border ${active
-            ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30'
-            : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border-transparent'}">
-            <i data-lucide="${c.icon}" class="w-4 h-4 flex-shrink-0 ${active ? 'text-indigo-400' : ''}"></i>
-            <span class="truncate">${c.label}</span>
-            <span class="lg:ml-auto text-[11px] px-1.5 py-0.5 rounded-md ${active ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-800 text-slate-500'}">${count}</span>
+    
+    let html = '';
+    
+    // Przycisk "Wszystkie"
+    const allActive = currentFilterCategory === 'Wszystkie';
+    html += `<button onclick="filterCategory('Wszystkie')" class="flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all border ${allActive ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border-transparent'}">
+        <i data-lucide="layout-grid" class="w-4 h-4 flex-shrink-0 ${allActive ? 'text-indigo-400' : ''}"></i>
+        <span class="truncate">Wszystkie</span>
+        <span class="lg:ml-auto text-[11px] px-1.5 py-0.5 rounded-md ${allActive ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-800 text-slate-500'}">${items.length}</span>
+    </button>`;
+
+    // Główna kategoria "Inne" z podkategoriami
+    const isOtherMainActive = currentFilterCategory === 'Inne';
+    html += `<div class="mt-2 pt-2 border-t border-slate-800/80">
+        <div class="px-3 py-1.5 text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-2">
+            <i data-lucide="folder" class="w-3.5 h-3.5 text-indigo-400"></i> Inne
+        </div>
+        <div class="ml-2 pl-2 border-l border-slate-800 space-y-1 mt-1">`;
+
+    SUB_CATEGORIES.forEach(sub => {
+        const count = items.filter(i => (i.category === 'Inne' || !i.category) && i.subCategory === sub.key).length;
+        const active = currentFilterCategory === sub.key;
+        html += `<button onclick="filterCategory('${sub.key}')" class="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium transition-all ${active ? 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/30' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'}">
+            <i data-lucide="${sub.icon}" class="w-3.5 h-3.5 flex-shrink-0 ${active ? 'text-indigo-400' : ''}"></i>
+            <span class="truncate">${sub.label}</span>
+            <span class="ml-auto text-[10px] px-1.5 py-0.2 rounded ${active ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-800 text-slate-500'}">${count}</span>
         </button>`;
-    }).join('');
+    });
+
+    html += `</div></div>`;
+    list.innerHTML = html;
 }
 
 function filterCategory(cat) {
