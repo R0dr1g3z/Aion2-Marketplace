@@ -571,13 +571,34 @@ function renderTable() {
     const tbody = document.getElementById('itemTableBody');
     tbody.innerHTML = '';
     const q = currentSearchQuery.toLowerCase();
+// Definicja kolejności rzadkości (Grade) od najwyższej do najniższej
+    const gradeOrder = { 'Radiant': 1, 'Pure': 2, 'Fine': 3, 'Fresh': 4, 'Base': 5 };
+    
+    function getGradeRank(name) {
+        if (name.startsWith('Radiant')) return 1;
+        if (name.startsWith('Pure')) return 2;
+        if (name.startsWith('Fine')) return 3;
+        if (name.startsWith('Fresh')) return 4;
+        return 5;
+    }
+
     const filtered = items
         .filter(i => {
             if (currentFilterCategory === 'Wszystkie') return true;
             if (currentFilterCategory === 'Inne') return i.category === 'Inne' || !i.category;
             return i.subCategory === currentFilterCategory;
         })
-        .filter(i => i.name.toLowerCase().includes(q));
+        .filter(i => i.name.toLowerCase().includes(q))
+        .sort((a, b) => {
+            // Najpierw sortuj wg ulubionych
+            if (b.fav !== a.fav) return b.fav - a.fav;
+            // Następnie wg stopnia (Grade)
+            const gradeA = getGradeRank(a.name);
+            const gradeB = getGradeRank(b.name);
+            if (gradeA !== gradeB) return gradeA - gradeB;
+            // Na końcu alfabetycznie wg nazwy
+            return a.name.localeCompare(b.name);
+        });
 
     document.getElementById('emptyState').classList.toggle('hidden', filtered.length > 0);
 
