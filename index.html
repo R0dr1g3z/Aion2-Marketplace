@@ -851,7 +851,8 @@ function normalizeImported(raw) {
         return {
             id,
             name: it.name.trim() || 'Bez nazwy',
-            category: ['Gathering Material', 'Crafting Material', 'Substance Morphing', 'Special Materials', 'Miscellaneous'].includes(it.category) ? it.category : 'Miscellaneous',
+            category: it.category || 'Inne',
+            subCategory: ['Gathering Material', 'Crafting Material', 'Substance Morphing', 'Special Materials', 'Miscellaneous'].includes(it.subCategory) ? it.subCategory : 'Miscellaneous',
             salesList: Math.max(0, parseInt(it.salesList, 10) || 0),
             lowestPrice,
             fav: !!it.fav,
