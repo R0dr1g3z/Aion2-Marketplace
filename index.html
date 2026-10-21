@@ -573,7 +573,7 @@ function renderTable() {
         const t = getTrend(item);
         const th = tableHistory(item);
         const highest = th.length ? th.reduce((a, b) => b.price > a.price ? b : a) : null;
-        const realLowest = item.history.reduce((min, h) => h.price < min ? h.price : min, item.history[0].price);
+        const periodLowest = th.length ? th.reduce((min, h) => h.price < min ? h.price : min, th[0].price) : 0;
         const tr = document.createElement('tr');
         tr.className = `hover:bg-slate-800/40 transition-colors cursor-pointer group ${item.id === selectedItemId ? 'bg-indigo-500/10 border-l-4 border-indigo-500' : ''}`;
         tr.onclick = () => selectItemForChart(item.id);
@@ -583,7 +583,7 @@ function renderTable() {
             </td>
             <td class="py-3.5 px-4 font-semibold text-slate-100">${esc(item.name)}</td>
             <td class="py-3.5 px-4 text-right font-semibold text-amber-400">${formatKinah(currentEntry(item).price)} Kinah</td>
-            <td class="py-3.5 px-4 text-right font-semibold text-emerald-400">${formatKinah(realLowest)} Kinah</td>
+            <td class="py-3.5 px-4 text-right font-semibold text-emerald-400">${formatKinah(periodLowest)} Kinah</td>
             <td class="py-3.5 px-4 text-right font-semibold text-rose-400">${highest ? formatKinah(highest.price) + ' Kinah' : '—'}</td>
             <td class="py-3.5 px-4 text-center text-xs font-semibold ${t.cls}">${t.arrow} ${t.text}</td>
             <td class="py-2 px-4">${sparkline(item, t)}</td>
