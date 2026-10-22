@@ -54,10 +54,11 @@
                     </div>
                 </div>
                 <div class="flex-1 max-w-md hidden md:block">
-                    <div class="relative">
+                    <div class="relative search-box">
                         <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                        <input type="text" id="searchInput" oninput="handleSearch(this.value)" placeholder="Szukaj przedmiotu w Aion 2..."
+                        <input type="text" id="searchInput" autocomplete="off" oninput="handleSearch(this.value, this)" onfocus="handleSearch(this.value, this)" placeholder="Szukaj przedmiotu w Aion 2..."
                             class="w-full pl-10 pr-4 py-2 bg-slate-950/70 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-500 text-slate-200">
+                        <div class="search-results hidden absolute left-0 right-0 top-full mt-2 glass-card rounded-xl p-1.5 shadow-2xl z-50 max-h-80 overflow-y-auto"></div>
                     </div>
                 </div>
                 <div class="flex items-center gap-3">
@@ -99,13 +100,14 @@
 
     <main class="flex-1 min-w-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
-        <div class="block md:hidden">
-            <div class="relative">
-                <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                <input type="text" oninput="handleSearch(this.value)" placeholder="Szukaj przedmiotu w Aion 2..."
-                    class="w-full pl-10 pr-4 py-2.5 bg-slate-950/70 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-slate-200">
+            <div class="block md:hidden">
+                <div class="relative search-box">
+                    <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" autocomplete="off" oninput="handleSearch(this.value, this)" onfocus="handleSearch(this.value, this)" placeholder="Szukaj przedmiotu w Aion 2..."
+                        class="w-full pl-10 pr-4 py-2.5 bg-slate-950/70 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-slate-200">
+                    <div class="search-results hidden absolute left-0 right-0 top-full mt-2 glass-card rounded-xl p-1.5 shadow-2xl z-50 max-h-80 overflow-y-auto"></div>
+                </div>
             </div>
-        </div>
 
         <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
             <div class="glass-card rounded-2xl p-4 flex items-center gap-4 border-slate-800">
@@ -828,7 +830,66 @@ function showToast(title, message) {
     toastTimer = setTimeout(() => toast.classList.add('translate-y-20', 'opacity-0'), 3000);
 }
 
-function handleSearch(val) { currentSearchQuery = val; renderTable(); }
+function handleSearch(val, inputEl) {
+    currentSearchQuery = val;
+    renderTable();
+    renderSearchResults(val, inputEl);
+}
+
+function renderSearchResults(val, inputEl) {
+    // zamknij wszystkie listy, otwórz tylko tę przy aktywnym polu
+    document.querySelectorAll('.search-results').forEach(b => b.classList.add('hidden'));
+    if (!inputEl) return;
+    const box = inputEl.closest('.search-box').querySelector('.search-results');
+    const q = val.trim().toLowerCase();
+    if (!q) { box.innerHTML = ''; return; }
+
+    const matches = items
+        .filter(i => i.name.toLowerCase().includes(q))
+        .sort((a, b) => {
+            const wA = a.weight !== undefined ? a.weight : 4;
+            const wB = b.weight !== undefined ? b.weight : 4;
+            if (wA !== wB) return wA - wB;
+            return a.name.localeCompare(b.name);
+        });
+
+    if (!matches.length) {
+        box.innerHTML = '<p class="px-3 py-3 text-sm text-slate-500">Brak wyników</p>';
+    } else {
+        box.innerHTML = matches.map(i => {
+            const cur = currentEntry(i);
+            return `<button type="button" onclick="pickSearchResult(${i.id})" class="w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-left hover:bg-slate-800/70 transition-colors">
+                <span class="min-w-0">
+                    <span class="block text-sm font-semibold text-slate-100 truncate">${esc(i.name)}</span>
+                    <span class="block text-[11px] text-slate-500 truncate">${esc(i.subCategory || 'Miscellaneous')}</span>
+                </span>
+                <span class="text-xs font-semibold text-amber-400 whitespace-nowrap">${formatKinah(cur.price)} Kinah</span>
+            </button>`;
+        }).join('');
+    }
+    box.classList.remove('hidden');
+}
+
+function pickSearchResult(id) {
+    // jeśli przedmiot nie należy do aktualnej kategorii, przełącz na "Wszystkie"
+    if (!getVisibleItems(false).some(i => i.id === id)) currentFilterCategory = 'Wszystkie';
+    selectedItemId = id;
+    populateChartSelector();
+    updateChartData();
+    renderTable();
+    document.querySelectorAll('.search-results').forEach(b => b.classList.add('hidden'));
+    document.getElementById('mainPriceChart').scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+// zamykanie listy: klik poza wyszukiwarką i Escape
+document.addEventListener('click', e => {
+    if (!e.target.closest('.search-box'))
+        document.querySelectorAll('.search-results').forEach(b => b.classList.add('hidden'));
+});
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape')
+        document.querySelectorAll('.search-results').forEach(b => b.classList.add('hidden'));
+});
 
 const SUB_CATEGORIES = [
     { key: 'Gathering Material', label: 'Gathering Material', icon: 'pickaxe' },
