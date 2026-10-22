@@ -196,11 +196,11 @@
                         <thead>
                             <tr class="border-b border-slate-800 text-[11px] uppercase tracking-wider text-slate-400 bg-slate-950/60">
                                 <th class="py-3.5 px-4 text-center w-10"><i data-lucide="star" class="w-3.5 h-3.5 mx-auto"></i></th>
-                                <th class="py-3.5 px-4">Przedmiot (Item)</th>
-                                <th class="py-3.5 px-4 text-right">Aktualna cena</th>
-                                <th class="py-3.5 px-4 text-right">Lowest Sale Price</th>
-                                <th class="py-3.5 px-4 text-right">Najwyższa cena</th>
-                                <th class="py-3.5 px-4 text-center">Trend Ceny</th>
+                                <th class="py-3.5 px-4">Przedmiot</th>
+                                <th class="py-3.5 px-4 text-right"><button type="button" data-sort="current" onclick="setSort('current')" class="sort-btn inline-flex items-center gap-1 uppercase tracking-wider hover:text-white transition-colors">Aktualna cena <span class="sort-ind"></span></button></th>
+                                <th class="py-3.5 px-4 text-right"><button type="button" data-sort="low" onclick="setSort('low')" class="sort-btn inline-flex items-center gap-1 uppercase tracking-wider hover:text-white transition-colors">Najniższa cena <span class="sort-ind"></span></button></th>
+                                <th class="py-3.5 px-4 text-right"><button type="button" data-sort="high" onclick="setSort('high')" class="sort-btn inline-flex items-center gap-1 uppercase tracking-wider hover:text-white transition-colors">Najwyższa cena <span class="sort-ind"></span></button></th>
+                                <th class="py-3.5 px-4 text-center"><button type="button" data-sort="trend" onclick="setSort('trend')" class="sort-btn inline-flex items-center gap-1 uppercase tracking-wider hover:text-white transition-colors">Trend ceny <span class="sort-ind"></span></button></th>
                                 <th class="py-3.5 px-4 text-center">Wykres cen</th>
                                 <th class="py-3.5 px-4 text-right">Akcje</th>
                             </tr>
@@ -587,8 +587,39 @@ function selectItemForChart(id) {
     renderTable();
 }
 
+/* ---------- Sortowanie trend listy ---------- */
+let sortKey = null;   // null = domyślne (waga → alfabetycznie)
+let sortDir = 'desc'; // 'asc' | 'desc'
+
+function sortValue(item, key) {
+    const th = tableHistory(item);
+    switch (key) {
+        case 'current': return currentEntry(item).price;
+        case 'low':     return th.length ? Math.min(...th.map(h => h.price)) : null;
+        case 'high':    return th.length ? Math.max(...th.map(h => h.price)) : null;
+        case 'trend':   return getTrend(item).pct; // null gdy brak danych
+    }
+}
+
+// Kliknięcie: malejąco → rosnąco → powrót do domyślnego
+function setSort(key) {
+    if (sortKey !== key) { sortKey = key; sortDir = 'desc'; }
+    else if (sortDir === 'desc') { sortDir = 'asc'; }
+    else { sortKey = null; sortDir = 'desc'; }
+    renderTable();
+}
+
+function updateSortIndicators() {
+    document.querySelectorAll('.sort-btn').forEach(btn => {
+        const active = btn.dataset.sort === sortKey;
+        btn.classList.toggle('text-indigo-300', active);
+        btn.querySelector('.sort-ind').textContent = active ? (sortDir === 'desc' ? '▼' : '▲') : '↕';
+    });
+}
+
 function getVisibleItems(withSearch = true) {
     const q = withSearch ? currentSearchQuery.toLowerCase() : '';
+    const useSort = withSearch && sortKey; // sortowanie kolumn tylko dla tabeli
     return items
         .filter(i => {
             if (currentFilterCategory === 'Wszystkie') return true;
@@ -597,7 +628,18 @@ function getVisibleItems(withSearch = true) {
         })
         .filter(i => i.name.toLowerCase().includes(q))
         .sort((a, b) => {
+            // 1. Ulubione zawsze na górze
             if (b.fav !== a.fav) return b.fav - a.fav;
+
+            // 2. Sortowanie po wybranej kolumnie
+            if (useSort) {
+                const va = sortValue(a, sortKey), vb = sortValue(b, sortKey);
+                if (va === null && vb !== null) return 1;   // brak danych zawsze na końcu
+                if (vb === null && va !== null) return -1;
+                if (va !== vb) return sortDir === 'desc' ? vb - va : va - vb;
+            }
+
+            // 3. Domyślnie: waga, potem alfabetycznie
             const wA = a.weight !== undefined ? a.weight : 4;
             const wB = b.weight !== undefined ? b.weight : 4;
             if (wA !== wB) return wA - wB;
@@ -642,6 +684,7 @@ function renderTable() {
             </td>`;
         tbody.appendChild(tr);
     });
+    updateSortIndicators();
     lucide.createIcons();
 }
 
