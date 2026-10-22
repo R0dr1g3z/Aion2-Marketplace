@@ -89,7 +89,7 @@
     <div class="flex-1 w-full flex flex-col lg:flex-row">
 
     <!-- Sidebar kategorii: pełna wysokość, przyklejony do lewej krawędzi -->
-    <aside class="w-full lg:w-64 flex-shrink-0 border-b lg:border-b-0 lg:border-r border-slate-800/80 bg-slate-900/60 backdrop-blur lg:sticky lg:top-16 lg:self-start lg:h-[calc(100vh-4rem)]">
+    <aside class="w-full lg:w-64 flex-shrink-0 border-b lg:border-b-0 lg:border-r border-slate-800/80 bg-slate-900/60 backdrop-blur lg:sticky lg:top-16 lg:self-start lg:h-[calc(100vh-4rem)] lg:overflow-y-auto">
         <nav class="p-3 lg:p-4 lg:h-full flex flex-col">
             <p class="hidden lg:flex items-center gap-2 px-3 pt-1 pb-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">
                 <i data-lucide="layout-list" class="w-3.5 h-3.5 text-indigo-400"></i> Kategorie
@@ -236,19 +236,11 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="block text-xs font-medium text-slate-300 mb-1.5">Kategoria główna *</label>
-                        <select id="formCategory" required class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white">
-                            <option value="Inne">Inne</option>
-                        </select>
+                        <select id="formCategory" required onchange="updateSubOptions()" class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white"></select>
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-slate-300 mb-1.5">Podkategoria *</label>
-                        <select id="formSubCategory" required class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white">
-                            <option value="Gathering Material">Gathering Material</option>
-                            <option value="Crafting Material">Crafting Material</option>
-                            <option value="Substance Morphing">Substance Morphing</option>
-                            <option value="Special Materials">Special Materials</option>
-                            <option value="Miscellaneous">Miscellaneous</option>
-                        </select>
+                        <select id="formSubCategory" required class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white"></select>
                     </div>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -373,13 +365,15 @@ let currentUser = null;
 let items = CLOUD ? [] : loadItems();
 let selectedItemId = items.length ? items[0].id : null;
 let pendingDeleteId = null;
-let currentFilterCategory = 'Wszystkie';
 let currentSearchQuery = '';
 let chartInstance = null;
-let isOtherExpanded = false;
+let currentCategory = 'Wszystkie';
+let currentSub = null;
+let expandedCat = null;
 
 document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
+    fillCategorySelects();
     initRangeInputs();
     refreshAll(true);
     initCloud();
@@ -623,11 +617,7 @@ function getVisibleItems(withSearch = true) {
     const q = withSearch ? currentSearchQuery.toLowerCase() : '';
     const useSort = withSearch && sortKey; // sortowanie kolumn tylko dla tabeli
     return items
-        .filter(i => {
-            if (currentFilterCategory === 'Wszystkie') return true;
-            if (currentFilterCategory === 'Inne') return i.category === 'Inne' || !i.category;
-            return i.subCategory === currentFilterCategory;
-        })
+        .filter(matchesFilter)
         .filter(i => i.name.toLowerCase().includes(q))
         .sort((a, b) => {
             // 1. Ulubione zawsze na górze
@@ -743,6 +733,8 @@ function showModal() {
 }
 function openAddModal() {
     document.getElementById('itemForm').reset();
+    document.getElementById('formCategory').value = currentCategory !== 'Wszystkie' ? currentCategory : 'Inne';
+    updateSubOptions(currentSub);
     document.getElementById('formItemId').value = '';
     document.getElementById('formDate').value = getTodayString();
     document.getElementById('modalTitle').textContent = 'Dodaj nowy przedmiot';
@@ -754,13 +746,13 @@ function openEditModal(id) {
     if (!item) return;
     document.getElementById('formItemId').value = item.id;
     document.getElementById('formName').value = item.name;
-    document.getElementById('formCategory').value = item.category;
+    document.getElementById('formCategory').value = itemCategory(item);
+    updateSubOptions(item.subCategory);
     document.getElementById('formSales').value = item.salesList;
     document.getElementById('formPrice').value = item.lowestPrice;
     document.getElementById('formDate').value = getTodayString();
     document.getElementById('modalTitle').textContent = 'Edytuj / zaktualizuj cenę';
     document.getElementById('modalDeleteBtn').classList.remove('hidden');
-    document.getElementById('formSubCategory').value = item.subCategory || 'Miscellaneous';
     document.getElementById('formWeight').value = item.weight || 4;
     showModal();
 }
@@ -871,8 +863,7 @@ function renderSearchResults(val, inputEl) {
 }
 
 function pickSearchResult(id) {
-    // jeśli przedmiot nie należy do aktualnej kategorii, przełącz na "Wszystkie"
-    if (!getVisibleItems(false).some(i => i.id === id)) currentFilterCategory = 'Wszystkie';
+    if (!getVisibleItems(false).some(i => i.id === id)) { currentCategory = 'Wszystkie'; currentSub = null; expandedCat = null; }
     selectedItemId = id;
     populateChartSelector();
     updateChartData();
@@ -891,77 +882,91 @@ document.addEventListener('keydown', e => {
         document.querySelectorAll('.search-results').forEach(b => b.classList.add('hidden'));
 });
 
-const SUB_CATEGORIES = [
-    { key: 'Gathering Material', label: 'Gathering Material', icon: 'pickaxe' },
-    { key: 'Crafting Material',  label: 'Crafting Material',  icon: 'hammer' },
-    { key: 'Substance Morphing', label: 'Substance Morphing', icon: 'sparkles' },
-    { key: 'Special Materials',  label: 'Special Materials',  icon: 'shield-alert' },
-    { key: 'Miscellaneous',      label: 'Miscellaneous',      icon: 'package' }
+const CATEGORIES = [
+    { key: 'Inne', label: 'Inne', icon: 'folder', subs: ['Gathering Material', 'Crafting Material', 'Substance Morphing', 'Special Materials', 'Miscellaneous'] },
+    { key: 'Bronie', label: 'Bronie', icon: 'swords', subs: ['Longsword', 'Greatsword', 'Dagger', 'Bow', 'Spellbook', 'Orb', 'Mace', 'Staff', 'Guard'] },
+    { key: 'Zbroje', label: 'Zbroje', icon: 'shield', subs: ['Helm', 'Pauldrons', 'Top', 'Legs', 'Gloves', 'Shoes', 'Cloak'] },
+    { key: 'Akcesoria', label: 'Akcesoria', icon: 'gem', subs: ['Necklace', 'Earrings', 'Ring', 'Bracelet'] },
+    { key: 'Consumables', label: 'Consumables', icon: 'flask-conical', subs: ['Potions', 'Food', 'Scroll', 'Candy', 'Manastone/Soulstone', 'Theostone', 'Wings', 'Pantheon', 'Duration Ticket', 'Chest', 'Miscellaneous'] },
+    { key: 'Skiny', label: 'Skiny', icon: 'shirt', subs: ['Armor', 'Decoration'] }
 ];
+
+// stare przedmioty z nieznaną kategorią (np. "Materiały") trafiają do "Inne"
+function itemCategory(i) { return CATEGORIES.some(c => c.key === i.category) ? i.category : 'Inne'; }
+function itemSub(i) { return i.subCategory || 'Miscellaneous'; }
+function matchesFilter(i) {
+    if (currentCategory === 'Wszystkie') return true;
+    if (itemCategory(i) !== currentCategory) return false;
+    return !currentSub || itemSub(i) === currentSub;
+}
+
+function updateSubOptions(selected) {
+    const cat = CATEGORIES.find(c => c.key === document.getElementById('formCategory').value) || CATEGORIES[0];
+    const sel = document.getElementById('formSubCategory');
+    sel.innerHTML = cat.subs.map(s => `<option value="${s}">${s}</option>`).join('');
+    if (selected && cat.subs.includes(selected)) sel.value = selected;
+}
+function fillCategorySelects() {
+    document.getElementById('formCategory').innerHTML =
+        CATEGORIES.map(c => `<option value="${c.key}">${c.label}</option>`).join('');
+    updateSubOptions();
+}
 
 function renderCategories() {
     const list = document.getElementById('categoryList');
     if (!list) return;
-    
-    let html = '';
-    
-    // Przycisk "Wszystkie"
-    const allActive = currentFilterCategory === 'Wszystkie';
-    html += `<button onclick="filterCategory('Wszystkie')" class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all border ${allActive ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border-transparent'}">
-        <i data-lucide="layout-grid" class="w-4 h-4 flex-shrink-0 ${allActive ? 'text-indigo-400' : ''}"></i>
-        <span class="truncate">Wszystkie</span>
-        <span class="ml-auto text-[11px] px-1.5 py-0.5 rounded-md ${allActive ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-800 text-slate-500'}">${items.length}</span>
-    </button>`;
+    const btnCls = a => a ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border-transparent';
+    const badgeCls = a => a ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-800 text-slate-500';
 
-    // Łączna liczba przedmiotów w kategorii "Inne"
-    const otherCount = items.filter(i => i.category === 'Inne' || !i.category).length;
-    const isOtherActive = currentFilterCategory === 'Inne';
-
-    // Przycisk "Inne" (identyczny styl jak "Wszystkie")
-    html += `<div class="space-y-1">
-        <button onclick="toggleOtherCategory()" class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all border ${isOtherActive ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border-transparent'}">
-            <i data-lucide="folder" class="w-4 h-4 flex-shrink-0 ${isOtherActive ? 'text-indigo-400' : ''}"></i>
-            <span class="truncate">Inne</span>
-            <span class="ml-auto text-[11px] px-1.5 py-0.5 rounded-md ${isOtherActive ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-800 text-slate-500'}">${otherCount}</span>
+    const mainRow = (onclick, icon, label, count, active) => `
+        <button onclick="${onclick}" class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all border ${btnCls(active)}">
+            <i data-lucide="${icon}" class="w-4 h-4 flex-shrink-0 ${active ? 'text-indigo-400' : ''}"></i>
+            <span class="truncate">${label}</span>
+            <span class="ml-auto text-[11px] px-1.5 py-0.5 rounded-md ${badgeCls(active)}">${count}</span>
         </button>`;
 
-    // Podkategorie (pojawiają się z delikatnym wcięciem po kliknięciu "Inne")
-    if (isOtherExpanded) {
-        html += `<div class="ml-3 pl-2 border-l border-slate-800 space-y-1 mt-1">`;
-        SUB_CATEGORIES.forEach(sub => {
-            const count = items.filter(i => (i.category === 'Inne' || !i.category) && i.subCategory === sub.key).length;
-            const active = currentFilterCategory === sub.key;
-            html += `<button onclick="filterCategory('${sub.key}')" class="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium transition-all ${active ? 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/30' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'}">
-                <i data-lucide="${sub.icon}" class="w-3.5 h-3.5 flex-shrink-0 ${active ? 'text-indigo-400' : ''}"></i>
-                <span class="truncate">${sub.label}</span>
-                <span class="ml-auto text-[10px] px-1.5 py-0.2 rounded ${active ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-800 text-slate-500'}">${count}</span>
-            </button>`;
-        });
-        html += `</div>`;
-    }
+    let html = mainRow("selectCategory('Wszystkie')", 'layout-grid', 'Wszystkie', items.length, currentCategory === 'Wszystkie');
 
-    html += `</div>`;
+    CATEGORIES.forEach(c => {
+        const count = items.filter(i => itemCategory(i) === c.key).length;
+        const active = currentCategory === c.key && !currentSub;
+        html += `<div class="space-y-1 flex-shrink-0">` + mainRow(`selectCategory('${c.key}')`, c.icon, c.label, count, active);
+        if (expandedCat === c.key) {
+            html += `<div class="ml-3 pl-2 border-l border-slate-800 space-y-1 mt-1">` +
+                c.subs.map(sub => {
+                    const n = items.filter(i => itemCategory(i) === c.key && itemSub(i) === sub).length;
+                    const a = currentCategory === c.key && currentSub === sub;
+                    return `<button onclick="filterCategory('${c.key}', '${sub}')" class="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium transition-all ${a ? 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/30' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'}">
+                        <span class="truncate">${sub}</span>
+                        <span class="ml-auto text-[10px] px-1.5 rounded ${badgeCls(a)}">${n}</span>
+                    </button>`;
+                }).join('') + `</div>`;
+        }
+        html += `</div>`;
+    });
+
     list.innerHTML = html;
     lucide.createIcons();
 }
 
-function filterCategory(cat) {
-    currentFilterCategory = cat;
+// klik w kategorię: filtruje całą kategorię i rozwija/zwija podkategorie
+function selectCategory(cat) {
+    if (cat === 'Wszystkie') expandedCat = null;
+    else expandedCat = (expandedCat === cat && currentCategory === cat && !currentSub) ? null : cat;
+    filterCategory(cat);
+}
+
+function filterCategory(cat, sub = null) {
+    currentCategory = cat;
+    currentSub = sub;
     const list = getVisibleItems(false);
-    // jeśli wybrany przedmiot nie należy do nowej kategorii, przełącz na pierwszy z niej
     if (!list.some(i => i.id === selectedItemId)) {
         selectedItemId = list.length ? list[0].id : null;
     }
     populateChartSelector();
-    updateChartData();   // odświeża wykres i KPI
+    updateChartData();
     renderTable();
 }
-
-function toggleOtherCategory() {
-    isOtherExpanded = !isOtherExpanded; // Przełącza stan rozwinięcia
-    filterCategory('Inne');              // Filtruje tabelę po głównej kategorii 'Inne'
-}
-
 
 /* ---------- Eksport / Import ---------- */
 function exportData() {
@@ -995,11 +1000,13 @@ function normalizeImported(raw) {
         if (!isFinite(id) || usedIds.has(id)) id = Date.now() + idx;
         usedIds.add(id);
         const lowestPrice = history.reduce((min, h) => h.price < min ? h.price : min, history[0].price);
+        const cat = CATEGORIES.some(c => c.key === it.category) ? it.category : 'Inne';
+        const subs = CATEGORIES.find(c => c.key === cat).subs;
         return {
             id,
             name: it.name.trim() || 'Bez nazwy',
-            category: it.category || 'Inne',
-            subCategory: ['Gathering Material', 'Crafting Material', 'Substance Morphing', 'Special Materials', 'Miscellaneous'].includes(it.subCategory) ? it.subCategory : 'Miscellaneous',
+            category: cat,
+            subCategory: subs.includes(it.subCategory) ? it.subCategory : (subs.includes('Miscellaneous') ? 'Miscellaneous' : subs[0]),
             weight: parseInt(it.weight, 10) || 4,
             salesList: Math.max(0, parseInt(it.salesList, 10) || 0),
             lowestPrice,
