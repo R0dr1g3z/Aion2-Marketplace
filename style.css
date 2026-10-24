@@ -13,9 +13,20 @@ input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.8); cur
     top: 4.5rem;
     z-index: 20;
     background: #0b1222;
-    /* cień w kolorze tła strony, przesunięty w górę: zasłania tabelę nad kartą, razem z rogami */
+    /* cień w kolorze tła strony: zasłania zaokrąglone rogi karty */
     box-shadow: 0 -1rem 0 0 #080d1a, 0 25px 50px -12px rgba(0, 0, 0, 0.35) !important;
     transition: padding 0.25s ease;
+}
+/* prostokątna maska nad kartą: zakrywa szczelinę pod headerem bez zaokrąglonych rogów */
+#chartCard::before {
+    content: '';
+    position: absolute;
+    left: -1px;
+    right: -1px;
+    bottom: 100%;
+    height: 1rem;             /* zachodzi pod header (z-30), więc luki nie widać */
+    background: #080d1a;      /* kolor tła strony */
+    pointer-events: none;
 }
 #chartWrap { height: 18rem; transition: height 0.25s ease; }
 #chartCard.compact { padding: 0.75rem 1.25rem; }
