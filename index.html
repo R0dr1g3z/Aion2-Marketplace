@@ -51,11 +51,18 @@
             #chartWrap { height: 14rem; }
             #chartCard.compact #chartWrap { height: 7rem; }
         }
+        #trendScroll thead th {
+            position: sticky;
+            top: 0;
+            z-index: 5;
+            background: #0b1222;
+            box-shadow: inset 0 -1px 0 #1e293b;
+        }
     </style>
 </head>
 <body class="min-h-full flex flex-col antialiased text-slate-100 selection:bg-indigo-500 selection:text-white">
 
-    <header class="border-b border-slate-800/80 bg-slate-900/90 backdrop-blur sticky top-0 z-30">
+    <header class="border-b border-slate-800/80 bg-slate-900 sticky top-0 z-30">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16 gap-4">
                 <div class="flex items-center gap-3">
@@ -188,7 +195,7 @@
         </section>
 
         <section class="space-y-4">
-            <div class="flex flex-wrap items-center justify-between gap-3">
+            <div id="trendHead" class="flex flex-wrap items-center justify-between gap-3">
                 <h2 class="text-lg font-bold text-white flex items-center gap-2">
                     <i data-lucide="list-filter" class="w-5 h-5 text-indigo-400"></i>
                     Trend list
@@ -212,7 +219,7 @@
                 </div>
             </div>
             <div class="glass-card rounded-2xl border-slate-800 overflow-hidden shadow-xl">
-                <div class="overflow-x-auto">
+                <div id="trendScroll" class="overflow-auto">
                     <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="border-b border-slate-800 text-[11px] uppercase tracking-wider text-slate-400 bg-slate-950/60">
@@ -1267,6 +1274,32 @@ function initCloud() {
                 signOut: () => signOut(auth)
             };
         }
+    </script>
+    <script>
+    // okno trend listy: zaczyna się tuż pod wykresem i kończy przy dolnej krawędzi ekranu
+    function sizeTrendBox() {
+        const card = document.getElementById('chartCard');
+        const head = document.getElementById('trendHead');
+        const box = document.getElementById('trendScroll');
+        if (!card || !head || !box) return;
+        const stickyTop = parseFloat(getComputedStyle(card).top) || 0;
+        // odstępy: 24 (między wykresem a tytułem) + 16 (tytuł–tabela) + 24 (dolny margines)
+        const free = window.innerHeight - stickyTop - card.offsetHeight - head.offsetHeight - 64;
+        box.style.maxHeight = Math.max(220, free) + 'px';
+    }
+
+    function initTrendBox() {
+        sizeTrendBox();
+        window.addEventListener('resize', sizeTrendBox);
+        const card = document.getElementById('chartCard');
+        if (card && window.ResizeObserver) new ResizeObserver(sizeTrendBox).observe(card);
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', initTrendBox);
+    } else {
+        initTrendBox();
+    }
     </script>
 </body>
 </html>
