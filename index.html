@@ -35,12 +35,21 @@
         input[type="date"]::-webkit-calendar-picker-indicator,
         input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.8); cursor: pointer; }
             .read-only .admin-only { display: none !important; }
-            #chartCard {
+        #chartCard {
             position: sticky;
-            top: 4.5rem;              /* pod nagłówkiem (4rem) + mały odstęp */
+            top: 4.5rem;
             z-index: 20;
-            background: rgba(11, 18, 34, 0.97);  /* prawie pełne tło, żeby tabela nie prześwitywała */
+            background: #0b1222;
             transition: padding 0.25s ease;
+        }
+        #chartCard::before {
+            content: '';
+            position: absolute;
+            left: 0; right: 0;
+            bottom: 100%;
+            height: 1rem;
+            background: #080d1a;
+            pointer-events: none;
         }
         #chartWrap { height: 18rem; transition: height 0.25s ease; }
         #chartCard.compact { padding: 0.75rem 1.25rem; }
