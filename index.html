@@ -563,24 +563,43 @@ function populateChartSelector() {
     });
 }
 
-function chartLabels(hist) {
-    const perDay = {};
-    hist.forEach(h => perDay[h.rawDate] = (perDay[h.rawDate] || 0) + 1);
-    // godzina na osi: w trybie 24h oraz gdy danego dnia jest więcej niż jeden wpis
-    return hist.map(h => (periodDays === 1 || perDay[h.rawDate] > 1) ? entryLabel(h) : h.date);
+let chartPts = []; // punkty aktualnie widoczne na wykresie (używane też w tooltipie)
+
+// 24h: surowe wpisy. Dłuższe okresy: jeden punkt na dzień (średnia + min/max z godziną)
+function buildChartPoints(hist) {
+    if (periodDays === 1) {
+        return hist.map(h => ({ label: entryLabel(h), avg: h.price, raw: true }));
+    }
+    const byDay = new Map();
+    hist.forEach(h => {
+        if (!byDay.has(h.rawDate)) byDay.set(h.rawDate, []);
+        byDay.get(h.rawDate).push(h);
+    });
+    return [...byDay.values()].map(list => {
+        const sum = list.reduce((s, h) => s + h.price, 0);
+        const min = list.reduce((a, b) => b.price < a.price ? b : a);
+        const max = list.reduce((a, b) => b.price > a.price ? b : a);
+        return { label: list[0].date, avg: Math.round(sum / list.length), min, max, count: list.length };
+    });
+}
+
+function applyChartData() {
+    const item = items.find(i => i.id === selectedItemId);
+    chartPts = buildChartPoints(item ? periodHistory(item) : []);
+    chartInstance.data.labels = chartPts.map(p => p.label);
+    chartInstance.data.datasets[0].data = chartPts.map(p => p.avg);
 }
 
 function initMainChart() {
     const ctx = document.getElementById('mainPriceChart').getContext('2d');
-    const item = items.find(i => i.id === selectedItemId);
-    const hist = item ? periodHistory(item) : [];
+    const atTime = h => h.time ? ` (godz. ${h.time})` : '';
     chartInstance = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: chartLabels(hist),
+            labels: [],
             datasets: [{
-                label: 'Lowest Price (Kinah)',
-                data: hist.map(h => h.price),
+                label: 'Cena (Kinah)',
+                data: [],
                 borderColor: '#818cf8', borderWidth: 3,
                 pointBackgroundColor: '#0f172a', pointBorderColor: '#fbbf24',
                 pointBorderWidth: 2, pointRadius: 4, pointHoverRadius: 6,
@@ -589,9 +608,27 @@ function initMainChart() {
         },
         options: {
             responsive: true, maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
             plugins: {
                 legend: { display: false },
-                tooltip: { callbacks: { label: c => `${formatKinah(c.parsed.y)} Kinah` } }
+                tooltip: {
+                    displayColors: false,
+                    callbacks: {
+                        title: c => (chartPts[c[0].dataIndex] || {}).label || '',
+                        label: c => {
+                            const p = chartPts[c.dataIndex];
+                            if (!p) return '';
+                            if (p.raw) return `${formatKinah(p.avg)} Kinah`;
+                            const lines = [
+                                `Średnia: ${formatKinah(p.avg)} Kinah`,
+                                `Maks.: ${formatKinah(p.max.price)} Kinah${atTime(p.max)}`,
+                                `Min.: ${formatKinah(p.min.price)} Kinah${atTime(p.min)}`
+                            ];
+                            if (p.count > 1) lines.push(`Wpisów tego dnia: ${p.count}`);
+                            return lines;
+                        }
+                    }
+                }
             },
             scales: {
                 x: { ticks: { color: '#94a3b8' }, grid: { color: 'rgba(148,163,184,0.08)' } },
@@ -599,18 +636,16 @@ function initMainChart() {
             }
         }
     });
+    applyChartData();
+    chartInstance.update();
 }
 
 function updateChartData() {
     if (!chartInstance) return;
-    const item = items.find(i => i.id === selectedItemId);
-    const hist = item ? periodHistory(item) : [];
-    chartInstance.data.labels = chartLabels(hist);
-    chartInstance.data.datasets[0].data = hist.map(h => h.price);
+    applyChartData();
     chartInstance.update();
     updateKPIs();
 }
-
 function selectItemForChart(id) {
     selectedItemId = id;
     document.getElementById('itemChartSelect').value = id;
