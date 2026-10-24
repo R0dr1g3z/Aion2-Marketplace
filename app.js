@@ -93,11 +93,6 @@ function refreshAll(init = false) {
 
 /* ---------- Trend + mini wykres (tabela) ---------- */
 let tablePeriodDays = 7; // 0 = cały okres
-function setTablePeriod(v) {
-    tablePeriodDays = v === 'custom' ? 'custom' : Number(v);
-    toggleCustom('tableCustom', tablePeriodDays === 'custom');
-    renderTable();
-}
 
 function getTrend(item) {
     const h = tableHistory(item);
@@ -173,20 +168,17 @@ function setPeriod(v) {
     toggleCustom('periodCustom', periodDays === 'custom');
     updateChartData();
 }
-function setCustomRange(kind) {
-    const pre = kind === 'chart' ? 'period' : 'table';
-    const fromEl = document.getElementById(pre + 'From'), toEl = document.getElementById(pre + 'To');
+function setCustomRange() {
+    const fromEl = document.getElementById('periodFrom'), toEl = document.getElementById('periodTo');
     let from = fromEl.value, to = toEl.value;
     if (!from || !to) return;
     if (from > to) { [from, to] = [to, from]; fromEl.value = from; toEl.value = to; }
-    if (kind === 'chart') { periodRange = { from, to }; updateChartData(); }
-    else { tableRange = { from, to }; renderTable(); }
+    periodRange = { from, to };
+    updateChartData();
 }
 function initRangeInputs() {
     document.getElementById('periodFrom').value = periodRange.from;
     document.getElementById('periodTo').value = periodRange.to;
-    document.getElementById('tableFrom').value = tableRange.from;
-    document.getElementById('tableTo').value = tableRange.to;
 }
 
 /* ---------- KPI (dla wybranego przedmiotu) ---------- */
