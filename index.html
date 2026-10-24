@@ -434,7 +434,8 @@ function getTrend(item) {
 }
 
 function sparkline(item, t) {
-    const prices = tableHistory(item).map(x => x.price);
+    // ta sama logika co wykres główny: 24h = surowe wpisy, dłużej = średnia dzienna
+    const prices = buildChartPoints(tableHistory(item), tablePeriodDays).map(p => p.avg);
     if (!prices.length) return '<span class="block text-center text-[11px] text-slate-600">brak danych</span>';
     const w = 110, h = 32, pad = 3;
     const min = Math.min(...prices), max = Math.max(...prices), range = max - min || 1;
@@ -565,9 +566,8 @@ function populateChartSelector() {
 
 let chartPts = []; // punkty aktualnie widoczne na wykresie (używane też w tooltipie)
 
-// 24h: surowe wpisy. Dłuższe okresy: jeden punkt na dzień (średnia + min/max z godziną)
-function buildChartPoints(hist) {
-    if (periodDays === 1) {
+function buildChartPoints(hist, days = periodDays) {
+    if (days === 1) {
         return hist.map(h => ({ label: entryLabel(h), avg: h.price, raw: true }));
     }
     const byDay = new Map();
@@ -620,9 +620,9 @@ function initMainChart() {
                             if (!p) return '';
                             if (p.raw) return `${formatKinah(p.avg)} Kinah`;
                             const lines = [
-                                `Średnia: ${formatKinah(p.avg)} Kinah`,
-                                `Maks.: ${formatKinah(p.max.price)} Kinah${atTime(p.max)}`,
-                                `Min.: ${formatKinah(p.min.price)} Kinah${atTime(p.min)}`
+                            `Średnia: ${formatKinah(p.avg)} Kinah`,
+                            `Min.: ${formatKinah(p.min.price)} Kinah${atTime(p.min)}`,
+                            `Maks.: ${formatKinah(p.max.price)} Kinah${atTime(p.max)}`
                             ];
                             if (p.count > 1) lines.push(`Wpisów tego dnia: ${p.count}`);
                             return lines;
