@@ -890,3 +890,11 @@ function initCloud() {
         refreshAll();
     }, () => showToast('Błąd bazy', 'Brak dostępu do danych (sprawdź reguły Firestore).'));
 }
+/* ---------- Przycisk "w górę" ---------- */
+function scrollToTop() {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+window.addEventListener('scroll', () => {
+    const btn = document.getElementById('toTopBtn');
+    if (btn) btn.classList.toggle('show', window.scrollY > 300);
+}, { passive: true });

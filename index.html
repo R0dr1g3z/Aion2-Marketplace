@@ -27,7 +27,7 @@
 
     <script>
         (function () {
-            const VERSION = 3;
+            const VERSION = 5;
             document.write(
                 `<link rel="stylesheet" href="style.css?v=${VERSION}">` +
                 `<script defer src="config.js?v=${VERSION}"><\/script>` +
@@ -308,12 +308,19 @@
     </div>
 
     <!-- Toast -->
-    <div id="toast" class="fixed bottom-5 right-5 z-50 transform translate-y-20 opacity-0 transition-all duration-300 glass-card border border-indigo-500/30 px-4 py-3 rounded-xl flex items-center gap-3 shadow-2xl pointer-events-none">
+    <div id="toast" class="fixed bottom-5 right-20 z-50 transform translate-y-20 opacity-0 transition-all duration-300 glass-card border border-indigo-500/30 px-4 py-3 rounded-xl flex items-center gap-3 shadow-2xl pointer-events-none">
         <div class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center"><i data-lucide="check-circle" class="w-5 h-5"></i></div>
         <div>
             <p id="toastTitle" class="text-sm font-semibold text-white">Sukces</p>
             <p id="toastMessage" class="text-xs text-slate-400">Pomyślnie zapisano zmiany.</p>
         </div>
     </div>
+
+    <!-- Przycisk powrotu na górę -->
+    <button id="toTopBtn" type="button" onclick="scrollToTop()" title="Wróć na górę" aria-label="Wróć na górę"
+        class="fixed bottom-5 right-5 z-40 w-11 h-11 rounded-xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white flex items-center justify-center shadow-lg shadow-indigo-500/30 hover:brightness-110 active:scale-95">
+        <i data-lucide="arrow-up" class="w-5 h-5"></i>
+    </button>
+
 </body>
 </html>
