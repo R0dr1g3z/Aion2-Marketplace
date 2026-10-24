@@ -92,7 +92,6 @@ function refreshAll(init = false) {
 }
 
 /* ---------- Trend + mini wykres (tabela) ---------- */
-let tablePeriodDays = 7; // 0 = cały okres
 
 function getTrend(item) {
     const h = tableHistory(item);
@@ -111,7 +110,7 @@ function getTrend(item) {
 
 function sparkline(item, t) {
     // ta sama logika co wykres główny: 24h = surowe wpisy, dłużej = średnia dzienna
-    const prices = buildChartPoints(tableHistory(item), tablePeriodDays).map(p => p.avg);
+    const prices = buildChartPoints(tableHistory(item), periodDays).map(p => p.avg);
     if (!prices.length) return '<span class="block text-center text-[11px] text-slate-600">brak danych</span>';
     const w = 110, h = 32, pad = 3;
     const min = Math.min(...prices), max = Math.max(...prices), range = max - min || 1;
@@ -131,7 +130,6 @@ function sparkline(item, t) {
 let periodDays = 7; // 0 = cały okres
 function isoDaysAgo(n) { const d = new Date(); d.setDate(d.getDate() - n); return localISO(d); }
 let periodRange = { from: isoDaysAgo(29), to: getTodayString() };
-let tableRange  = { from: isoDaysAgo(29), to: getTodayString() };
 
 function periodHistory(item, days = periodDays, range = periodRange) {
     if (!item) return [];
@@ -150,7 +148,7 @@ function periodHistory(item, days = periodDays, range = periodRange) {
 function currentEntry(item) {
     return item.history[item.history.length - 1]; // historia posortowana, ostatni = najnowszy
 }
-function tableHistory(item) { return periodHistory(item, tablePeriodDays, tableRange); }
+function tableHistory(item) { return periodHistory(item); }
 function periodLabel() {
     if (periodDays === 'custom') return `${fmtDate(periodRange.from)} – ${fmtDate(periodRange.to)}`;
     if (periodDays === 1) return 'ostatnie 24h';
@@ -167,6 +165,7 @@ function setPeriod(v) {
     periodDays = v === 'custom' ? 'custom' : Number(v);
     toggleCustom('periodCustom', periodDays === 'custom');
     updateChartData();
+    renderTable();
 }
 function setCustomRange() {
     const fromEl = document.getElementById('periodFrom'), toEl = document.getElementById('periodTo');
@@ -175,6 +174,7 @@ function setCustomRange() {
     if (from > to) { [from, to] = [to, from]; fromEl.value = from; toEl.value = to; }
     periodRange = { from, to };
     updateChartData();
+    renderTable();
 }
 function initRangeInputs() {
     document.getElementById('periodFrom').value = periodRange.from;
