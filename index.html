@@ -32,7 +32,8 @@
         ::-webkit-scrollbar-thumb:hover { background: #334155; }
         .glass-card { background: rgba(15, 23, 42, 0.75); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
         .aion-gold { color: #fbbf24; text-shadow: 0 0 10px rgba(251, 191, 36, 0.25); }
-        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.8); cursor: pointer; }
+        input[type="date"]::-webkit-calendar-picker-indicator,
+        input[type="time"]::-webkit-calendar-picker-indicator { filter: invert(0.8); cursor: pointer; }
             .read-only .admin-only { display: none !important; }
     </style>
 </head>
@@ -159,7 +160,7 @@
                         <input type="date" id="periodTo" onchange="setCustomRange('chart')" title="Do" class="bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-indigo-500">
                     </div>
                     <select id="periodSelect" onchange="setPeriod(this.value)" title="Okres" class="bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500 cursor-pointer">
-                        <option value="1">Dzisiejszy dzień</option>
+                        <option value="1">24h</option>
                         <option value="7" selected>Ostatnie 7 dni</option>
                         <option value="30">Ostatnie 30 dni</option>
                         <option value="0">Cały okres</option>
@@ -186,7 +187,7 @@
                         <input type="date" id="tableTo" onchange="setCustomRange('table')" title="Do" class="bg-slate-950 border border-slate-700 text-slate-200 text-[11px] rounded-lg px-2 py-1 w-[7.25rem] focus:outline-none focus:border-indigo-500">
                     </div>
                     <select id="tablePeriodSelect" onchange="setTablePeriod(this.value)" title="Okres trendu i mini wykresów" class="bg-slate-950 border border-slate-700 text-slate-200 text-[11px] font-medium rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500 cursor-pointer">
-                        <option value="1">Dzisiejszy dzień</option>
+                        <option value="1">24h</option>
                         <option value="7" selected>7 dni</option>
                         <option value="30">30 dni</option>
                         <option value="0">Cały okres</option>
@@ -269,9 +270,15 @@
                         <input type="number" id="formPrice" required min="0" placeholder="240000" class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white placeholder:text-slate-600">
                     </div>
                 </div>
-                <div>
-                    <label class="block text-xs font-medium text-slate-300 mb-1.5">Data wpisu *</label>
-                    <input type="date" id="formDate" required class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Data wpisu *</label>
+                        <input type="date" id="formDate" required class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Godzina wpisu *</label>
+                        <input type="time" id="formTime" required class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white">
+                    </div>
                 </div>
                 <div class="pt-4 border-t border-slate-800 flex items-center justify-between">
                     <button type="button" id="modalDeleteBtn" onclick="promptDeleteFromModal()" class="hidden px-3 py-2 text-xs font-semibold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-xl transition-all">Usuń przedmiot</button>
@@ -328,7 +335,16 @@ function fmtDate(raw) {
     return `${Number(d)} ${MONTHS[Number(m) - 1]}`;
 }
 function formatKinah(num) { return new Intl.NumberFormat('en-US').format(num); }
-function getTodayString() { return new Date().toISOString().split('T')[0]; }
+function pad2(n) { return String(n).padStart(2, '0'); }
+function localISO(d) { return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`; }
+function getTodayString() { return localISO(new Date()); }
+function getNowTime() { const d = new Date(); return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`; }
+
+const histKey = h => `${h.rawDate} ${h.time || '00:00'}`;
+const entryTs = h => new Date(`${h.rawDate}T${h.time || '00:00'}`).getTime();
+const sortHistory = arr => arr.sort((a, b) => histKey(a).localeCompare(histKey(b)));
+const entryLabel = h => h.time ? `${h.date} ${h.time}` : h.date;
+
 function esc(s) {
     return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 }
@@ -436,7 +452,7 @@ function sparkline(item, t) {
 
 /* ---------- Okres ---------- */
 let periodDays = 7; // 0 = cały okres
-const isoDaysAgo = n => { const d = new Date(); d.setDate(d.getDate() - n); return d.toISOString().split('T')[0]; };
+function isoDaysAgo(n) { const d = new Date(); d.setDate(d.getDate() - n); return localISO(d); }
 let periodRange = { from: isoDaysAgo(29), to: getTodayString() };
 let tableRange  = { from: isoDaysAgo(29), to: getTodayString() };
 
@@ -444,18 +460,27 @@ function periodHistory(item, days = periodDays, range = periodRange) {
     if (!item) return [];
     if (days === 'custom') return item.history.filter(h => h.rawDate >= range.from && h.rawDate <= range.to);
     if (!days) return item.history;
-    const fromStr = isoDaysAgo(days);
-    const f = item.history.filter(h => h.rawDate >= fromStr);
+    let f;
+    if (days === 1) {
+        const from = Date.now() - 24 * 3600 * 1000; // ostatnie 24h
+        f = item.history.filter(h => entryTs(h) >= from);
+    } else {
+        const fromStr = isoDaysAgo(days);
+        f = item.history.filter(h => h.rawDate >= fromStr);
+    }
     return f.length ? f : item.history.slice(-1);
 }
 function currentEntry(item) {
-    return item.history.find(h => h.rawDate === getTodayString()) || item.history[item.history.length - 1];
+    return item.history[item.history.length - 1]; // historia posortowana, ostatni = najnowszy
 }
 function tableHistory(item) { return periodHistory(item, tablePeriodDays, tableRange); }
 function periodLabel() {
-    if (periodDays === 1) return 'ostatni dzień';
+    if (periodDays === 'custom') return `${fmtDate(periodRange.from)} – ${fmtDate(periodRange.to)}`;
+    if (periodDays === 1) return 'ostatnie 24h';
     return periodDays ? `ostatnie ${periodDays} dni` : 'cały okres';
 }
+
+
 function toggleCustom(id, on) {
     const el = document.getElementById(id);
     el.classList.toggle('hidden', !on);
@@ -492,21 +517,20 @@ function updateKPIs() {
         ['kpiCurrentName', 'kpiLowName', 'kpiHighName', 'kpiSalesName'].forEach(id => set(id, 'Brak wybranego przedmiotu'));
         return;
     }
-    const today = getTodayString();
-    const todayEntry = item.history.find(h => h.rawDate === today);
-    const last = item.history[item.history.length - 1];
-    const cur = todayEntry || last;
+    const cur = currentEntry(item);
     set('kpiCurrentPrice', `${formatKinah(cur.price)} Kinah`);
-    set('kpiCurrentName', todayEntry ? `${item.name} · dziś` : `${item.name} · ostatni wpis ${cur.date}`);
+    set('kpiCurrentName', cur.rawDate === getTodayString()
+        ? `${item.name} · dziś${cur.time ? ' ' + cur.time : ''}`
+        : `${item.name} · ostatni wpis ${entryLabel(cur)}`);
 
     const hist = periodHistory(item);
     if (hist.length) {
         const lo = hist.reduce((a, b) => b.price < a.price ? b : a);
         const hi = hist.reduce((a, b) => b.price > a.price ? b : a);
         set('kpiLowPrice', `${formatKinah(lo.price)} Kinah`);
-        set('kpiLowName', `${lo.date} · ${periodLabel()}`);
+        set('kpiLowName', `${entryLabel(lo)} · ${periodLabel()}`);
         set('kpiHighPrice', `${formatKinah(hi.price)} Kinah`);
-        set('kpiHighName', `${hi.date} · ${periodLabel()}`);
+        set('kpiHighName', `${entryLabel(hi)} · ${periodLabel()}`);
     } else {
         set('kpiLowPrice', '—'); set('kpiHighPrice', '—');
         set('kpiLowName', `Brak danych · ${periodLabel()}`);
@@ -539,16 +563,24 @@ function populateChartSelector() {
     });
 }
 
+function chartLabels(hist) {
+    const perDay = {};
+    hist.forEach(h => perDay[h.rawDate] = (perDay[h.rawDate] || 0) + 1);
+    // godzina na osi: w trybie 24h oraz gdy danego dnia jest więcej niż jeden wpis
+    return hist.map(h => (periodDays === 1 || perDay[h.rawDate] > 1) ? entryLabel(h) : h.date);
+}
+
 function initMainChart() {
     const ctx = document.getElementById('mainPriceChart').getContext('2d');
     const item = items.find(i => i.id === selectedItemId);
+    const hist = item ? periodHistory(item) : [];
     chartInstance = new Chart(ctx, {
         type: 'line',
         data: {
-            labels: item ? periodHistory(item).map(h => h.date) : [],
+            labels: chartLabels(hist),
             datasets: [{
                 label: 'Lowest Price (Kinah)',
-                data: item ? periodHistory(item).map(h => h.price) : [],
+                data: hist.map(h => h.price),
                 borderColor: '#818cf8', borderWidth: 3,
                 pointBackgroundColor: '#0f172a', pointBorderColor: '#fbbf24',
                 pointBorderWidth: 2, pointRadius: 4, pointHoverRadius: 6,
@@ -572,8 +604,9 @@ function initMainChart() {
 function updateChartData() {
     if (!chartInstance) return;
     const item = items.find(i => i.id === selectedItemId);
-    chartInstance.data.labels = item ? periodHistory(item).map(h => h.date) : [];
-    chartInstance.data.datasets[0].data = item ? periodHistory(item).map(h => h.price) : [];
+    const hist = item ? periodHistory(item) : [];
+    chartInstance.data.labels = chartLabels(hist);
+    chartInstance.data.datasets[0].data = hist.map(h => h.price);
     chartInstance.update();
     updateKPIs();
 }
@@ -739,6 +772,7 @@ function openAddModal() {
     updateSubOptions(currentSub);
     document.getElementById('formItemId').value = '';
     document.getElementById('formDate').value = getTodayString();
+    document.getElementById('formTime').value = getNowTime();
     document.getElementById('modalTitle').textContent = 'Dodaj nowy przedmiot';
     document.getElementById('modalDeleteBtn').classList.add('hidden');
     showModal();
@@ -751,18 +785,13 @@ function openEditModal(id) {
     document.getElementById('formCategory').value = itemCategory(item);
     updateSubOptions(item.subCategory);
     document.getElementById('formSales').value = item.salesList;
-    document.getElementById('formPrice').value = item.lowestPrice;
+    document.getElementById('formPrice').value = currentEntry(item).price;
     document.getElementById('formDate').value = getTodayString();
+    document.getElementById('formTime').value = getNowTime();
+    document.getElementById('formWeight').value = item.weight || 4;
     document.getElementById('modalTitle').textContent = 'Edytuj / zaktualizuj cenę';
     document.getElementById('modalDeleteBtn').classList.remove('hidden');
-    document.getElementById('formWeight').value = item.weight || 4;
     showModal();
-}
-function closeModal() {
-    const modal = document.getElementById('itemModal');
-    modal.classList.add('opacity-0');
-    document.getElementById('modalContent').classList.add('scale-95');
-    setTimeout(() => modal.classList.add('hidden'), 200);
 }
 
 function saveItem(e) {
@@ -770,10 +799,11 @@ function saveItem(e) {
     const idVal = document.getElementById('formItemId').value;
     const name = document.getElementById('formName').value.trim();
     const category = document.getElementById('formCategory').value;
+    const subCategory = document.getElementById('formSubCategory').value;
     const salesList = parseInt(document.getElementById('formSales').value, 10);
     const price = parseFloat(document.getElementById('formPrice').value);
     const rawDate = document.getElementById('formDate').value || getTodayString();
-    const subCategory = document.getElementById('formSubCategory').value;
+    const time = document.getElementById('formTime').value || getNowTime();
     const weight = parseInt(document.getElementById('formWeight').value, 10) || 4;
 
     if (!name || isNaN(salesList) || isNaN(price) || price < 0 || salesList < 0) {
@@ -790,10 +820,10 @@ function saveItem(e) {
         item.subCategory = subCategory;
         item.salesList = salesList;
         item.weight = weight;
-        const existing = item.history.find(h => h.rawDate === rawDate);
+        const existing = item.history.find(h => h.rawDate === rawDate && (h.time || '') === time);
         if (existing) existing.price = price;
-        else item.history.push({ rawDate, date: fmtDate(rawDate), price });
-        item.history.sort((a, b) => a.rawDate.localeCompare(b.rawDate));
+        else item.history.push({ rawDate, time, date: fmtDate(rawDate), price });
+        sortHistory(item.history);
         item.lowestPrice = item.history.reduce((min, h) => h.price < min ? h.price : min, item.history[0].price);
         selectedItemId = item.id;
         savedItem = item;
@@ -801,7 +831,7 @@ function saveItem(e) {
     } else {
         const newItem = {
             id: Date.now(), name, category, subCategory, weight, salesList, lowestPrice: price, fav: false,
-            history: [{ rawDate, date: fmtDate(rawDate), price }]
+            history: [{ rawDate, time, date: fmtDate(rawDate), price }]
         };
         items.unshift(newItem);
         selectedItemId = newItem.id;
@@ -811,6 +841,13 @@ function saveItem(e) {
     cloudSave(savedItem);
     refreshAll();
     closeModal();
+}
+
+function closeModal() {
+    const modal = document.getElementById('itemModal');
+    modal.classList.add('opacity-0');
+    document.getElementById('modalContent').classList.add('scale-95');
+    setTimeout(() => modal.classList.add('hidden'), 200);
 }
 
 /* ---------- Toast / filters ---------- */
@@ -992,12 +1029,13 @@ function normalizeImported(raw) {
     return list.map((it, idx) => {
         if (!it || typeof it.name !== 'string' || !Array.isArray(it.history) || !it.history.length)
             throw new Error(`Błędny wpis nr ${idx + 1}.`);
-        const history = it.history.map(h => {
+        const history = sortHistory(it.history.map(h => {
             const price = Number(h.price);
             if (!/^\d{4}-\d{2}-\d{2}$/.test(h.rawDate || '') || !isFinite(price))
                 throw new Error(`Błędna historia ceny w "${it.name}".`);
-            return { rawDate: h.rawDate, date: fmtDate(h.rawDate), price };
-        }).sort((a, b) => a.rawDate.localeCompare(b.rawDate));
+            const time = /^\d{2}:\d{2}$/.test(h.time || '') ? h.time : '';
+            return { rawDate: h.rawDate, time, date: fmtDate(h.rawDate), price };
+        }));
         let id = Number(it.id);
         if (!isFinite(id) || usedIds.has(id)) id = Date.now() + idx;
         usedIds.add(id);
@@ -1028,30 +1066,22 @@ function importData(input) {
             const imported = normalizeImported(JSON.parse(reader.result));
             if (!confirm(`Aktualizować i dodać ${imported.length} przedmiotów z pliku?\nIstniejące przedmioty zostaną zaktualizowane, a reszta pozostanie bez zmian.`)) return;
 
-            // Tworzymy słownik istniejących przedmiotów według nazwy (lub ID)
             const itemMap = new Map(items.map(i => [i.name.toLowerCase(), i]));
 
             imported.forEach(newItem => {
                 const key = newItem.name.toLowerCase();
                 if (itemMap.has(key)) {
-                    // PRZEDMIOT ISTNIEJE: Aktualizujemy jego dane i dodajemy nowe wpisy w historii
                     const existing = itemMap.get(key);
                     existing.salesList = newItem.salesList;
-                    existing.lowestPrice = newItem.lowestPrice;
-
-                    // Scalanie historii cen (unikamy duplikatów dla tych samych dat)
                     newItem.history.forEach(newH => {
-                        const hIdx = existing.history.findIndex(h => h.rawDate === newH.rawDate);
-                        if (hIdx >= 0) {
-                            existing.history[hIdx].price = newH.price;
-                        } else {
-                            existing.history.push(newH);
-                        }
+                        const hIdx = existing.history.findIndex(h => h.rawDate === newH.rawDate && (h.time || '') === (newH.time || ''));
+                        if (hIdx >= 0) existing.history[hIdx].price = newH.price;
+                        else existing.history.push(newH);
                     });
-                    existing.history.sort((a, b) => a.rawDate.localeCompare(b.rawDate));
-                    cloudSave(existing); // Zapis do Firebase/LocalStorage pojedynczego przedmiotu
+                    sortHistory(existing.history);
+                    existing.lowestPrice = existing.history.reduce((min, h) => h.price < min ? h.price : min, existing.history[0].price);
+                    cloudSave(existing);
                 } else {
-                    // NOWY PRZEDMIOT: Dodajemy go do listy
                     items.push(newItem);
                     cloudSave(newItem);
                 }
@@ -1059,7 +1089,7 @@ function importData(input) {
 
             selectedItemId = items.length ? items[0].id : null;
             refreshAll();
-            showToast('Zaimportowano', `Zaktualizowano rynek na podstawie pliku.`);
+            showToast('Zaimportowano', 'Zaktualizowano rynek na podstawie pliku.');
         } catch (err) {
             showToast('Błąd importu', err.message || 'Nie udało się odczytać pliku.');
         }
@@ -1067,7 +1097,6 @@ function importData(input) {
     reader.onerror = () => showToast('Błąd importu', 'Nie udało się odczytać pliku.');
     reader.readAsText(file);
 }
-
 /* ---------- Wspólna baza (Firebase Firestore) ---------- */
 function loadFavs() {
     try { return JSON.parse(localStorage.getItem('aion2_favs') || '[]'); } catch (e) { return []; }
