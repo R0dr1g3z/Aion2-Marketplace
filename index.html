@@ -327,6 +327,7 @@
         };
     </script>
     <script>
+const DEFAULT_ITEM_NAME = 'Radiant Odyle';
 const STORAGE_KEY = 'aion2_market_v1';
 const MONTHS = ['Sty','Lut','Mar','Kwi','Maj','Cze','Lip','Sie','Wrz','Paź','Lis','Gru'];
 
@@ -1203,7 +1204,10 @@ function initCloud() {
     window.cloud.onItems(list => {
         const favs = new Set(loadFavs());
         items = list.map(i => ({ ...i, fav: favs.has(i.id) })).sort((a, b) => a.name.localeCompare(b.name));
-        if (!items.some(i => i.id === selectedItemId)) selectedItemId = items.length ? items[0].id : null;
+        if (!items.some(i => i.id === selectedItemId)) {
+        const def = items.find(i => i.name.toLowerCase() === DEFAULT_ITEM_NAME.toLowerCase());
+        selectedItemId = def ? def.id : ((getVisibleItems(false)[0] || {}).id ?? null);
+        }
         refreshAll();
     }, () => showToast('Błąd bazy', 'Brak dostępu do danych (sprawdź reguły Firestore).'));
 }
