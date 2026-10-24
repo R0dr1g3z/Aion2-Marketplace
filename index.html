@@ -24,7 +24,19 @@
             } }
         }
     </script>
-    <link rel="stylesheet" href="style.css?v=1">
+
+    <script>
+        (function () {
+            const VERSION = 2;
+            document.write(
+                `<link rel="stylesheet" href="style.css?v=${VERSION}">` +
+                `<script defer src="config.js?v=${VERSION}"><\/script>` +
+                `<script defer src="app.js?v=${VERSION}"><\/script>` +
+                `<script type="module" src="firebase.js?v=${VERSION}"><\/script>`
+            );
+        })();
+    </script>
+
 </head>
 <body class="min-h-full flex flex-col antialiased text-slate-100 selection:bg-indigo-500 selection:text-white">
 
@@ -185,7 +197,7 @@
                 </div>
             </div>
             <div class="glass-card rounded-2xl border-slate-800 overflow-hidden shadow-xl">
-                <div id="trendScroll" class="overflow-auto">
+                <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead>
                             <tr class="border-b border-slate-800 text-[11px] uppercase tracking-wider text-slate-400 bg-slate-950/60">
@@ -303,9 +315,5 @@
             <p id="toastMessage" class="text-xs text-slate-400">Pomyślnie zapisano zmiany.</p>
         </div>
     </div>
-
-    <script src="config.js?v=1"></script>
-    <script src="app.js?v=1"></script>
-    <script type="module" src="firebase.js?v=1"></script>
 </body>
 </html>

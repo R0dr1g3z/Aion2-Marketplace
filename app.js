@@ -890,29 +890,3 @@ function initCloud() {
         refreshAll();
     }, () => showToast('Błąd bazy', 'Brak dostępu do danych (sprawdź reguły Firestore).'));
 }
-
-/* ---------- Okno trend listy ---------- */
-// okno trend listy: zaczyna się tuż pod wykresem i kończy przy dolnej krawędzi ekranu
-function sizeTrendBox() {
-    const card = document.getElementById('chartCard');
-    const head = document.getElementById('trendHead');
-    const box = document.getElementById('trendScroll');
-    if (!card || !head || !box) return;
-    const stickyTop = parseFloat(getComputedStyle(card).top) || 0;
-    // odstępy: 24 (między wykresem a tytułem) + 16 (tytuł–tabela) + 24 (dolny margines)
-    const free = window.innerHeight - stickyTop - card.offsetHeight - head.offsetHeight - 64;
-    box.style.maxHeight = Math.max(220, free) + 'px';
-}
-
-function initTrendBox() {
-    sizeTrendBox();
-    window.addEventListener('resize', sizeTrendBox);
-    const card = document.getElementById('chartCard');
-    if (card && window.ResizeObserver) new ResizeObserver(sizeTrendBox).observe(card);
-}
-
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initTrendBox);
-} else {
-    initTrendBox();
-}
