@@ -207,7 +207,7 @@
                                 <th class="py-3.5 px-4 text-right"><button type="button" data-sort="high" onclick="setSort('high')" class="sort-btn inline-flex items-center gap-1 uppercase tracking-wider hover:text-white transition-colors">Najwyższa cena <span class="sort-ind"></span></button></th>
                                 <th class="py-3.5 px-4 text-center"><button type="button" data-sort="trend" onclick="setSort('trend')" class="sort-btn inline-flex items-center gap-1 uppercase tracking-wider hover:text-white transition-colors">Trend ceny <span class="sort-ind"></span></button></th>
                                 <th class="py-3.5 px-4 text-center">Wykres cen</th>
-                                <th class="py-3.5 px-4 text-right">Akcje</th>
+                                <th class="admin-only py-3.5 px-4 text-right">Akcje</th>
                             </tr>
                         </thead>
                         <tbody id="itemTableBody" class="divide-y divide-slate-800/60 text-sm"></tbody>
@@ -736,13 +736,13 @@ function renderTable() {
             <td class="py-3.5 px-4 text-right font-semibold text-rose-400">${highest ? formatKinah(highest.price) + ' Kinah' : '—'}</td>
             <td class="py-3.5 px-4 text-center text-xs font-semibold ${t.cls}">${t.arrow} ${t.text}</td>
             <td class="py-2 px-4">${sparkline(item, t)}</td>
-            <td class="py-3.5 px-4 text-right whitespace-nowrap" onclick="event.stopPropagation()">
-                <button onclick="openEditModal(${item.id})" title="Edytuj / zaktualizuj cenę" class="admin-only p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10">
-                    <i data-lucide="pencil" class="w-4 h-4"></i>
-                </button>
-                <button onclick="promptDeleteItem(${item.id})" title="Usuń z rynku" class="admin-only p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10">
-                    <i data-lucide="trash-2" class="w-4 h-4"></i>
-                </button>
+            <td class="admin-only py-3.5 px-4 text-right whitespace-nowrap" onclick="event.stopPropagation()">
+            <button onclick="openEditModal(${item.id})" title="Edytuj / zaktualizuj cenę" class="p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10">
+                <i data-lucide="pencil" class="w-4 h-4"></i>
+            </button>
+            <button onclick="promptDeleteItem(${item.id})" title="Usuń z rynku" class="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10">
+                <i data-lucide="trash-2" class="w-4 h-4"></i>
+            </button>
             </td>`;
         tbody.appendChild(tr);
     });
