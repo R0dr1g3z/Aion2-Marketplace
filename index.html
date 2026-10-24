@@ -159,6 +159,7 @@
                         <input type="date" id="periodTo" onchange="setCustomRange('chart')" title="Do" class="bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-indigo-500">
                     </div>
                     <select id="periodSelect" onchange="setPeriod(this.value)" title="Okres" class="bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500 cursor-pointer">
+                        <option value="1">Dzisiejszy dzień</option>
                         <option value="7" selected>Ostatnie 7 dni</option>
                         <option value="30">Ostatnie 30 dni</option>
                         <option value="0">Cały okres</option>
@@ -185,6 +186,7 @@
                         <input type="date" id="tableTo" onchange="setCustomRange('table')" title="Do" class="bg-slate-950 border border-slate-700 text-slate-200 text-[11px] rounded-lg px-2 py-1 w-[7.25rem] focus:outline-none focus:border-indigo-500">
                     </div>
                     <select id="tablePeriodSelect" onchange="setTablePeriod(this.value)" title="Okres trendu i mini wykresów" class="bg-slate-950 border border-slate-700 text-slate-200 text-[11px] font-medium rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-indigo-500 cursor-pointer">
+                        <option value="1">Dzisiejszy dzień</option>
                         <option value="7" selected>7 dni</option>
                         <option value="30">30 dni</option>
                         <option value="0">Cały okres</option>
@@ -451,7 +453,7 @@ function currentEntry(item) {
 }
 function tableHistory(item) { return periodHistory(item, tablePeriodDays, tableRange); }
 function periodLabel() {
-    if (periodDays === 'custom') return `${fmtDate(periodRange.from)} – ${fmtDate(periodRange.to)}`;
+    if (periodDays === 1) return 'ostatni dzień';
     return periodDays ? `ostatnie ${periodDays} dni` : 'cały okres';
 }
 function toggleCustom(id, on) {
