@@ -1,5 +1,6 @@
 function handleSearch(val, inputEl) {
-    currentSearchQuery = '';
+    currentSearchQuery = val;
+    renderTable();
     renderSearchResults(val, inputEl);
     const clr = inputEl && inputEl.closest('.search-box').querySelector('.search-clear');
     if (clr) clr.classList.toggle('hidden', !val);
@@ -49,8 +50,6 @@ function pickSearchResult(id) {
     updateChartData();
     renderTable();
     hideSearchResults();
-    const row = document.querySelector('#itemTableBody tr.row-selected');
-    if (row) row.scrollIntoView({ block: 'center', behavior: 'smooth' });
 }
 
 function renderCategories() {

@@ -62,6 +62,20 @@ function fillCategorySelects() {
     updateSubOptions();
 }
 
+let priceHintBase = null; // aktualna cena edytowanego przedmiotu (null = dodawanie)
+function updatePriceHint() {
+    const el = document.getElementById('formPriceHint');
+    const v = parseFloat(document.getElementById('formPrice').value);
+    if (isNaN(v)) { el.textContent = priceHintBase !== null ? `Aktualna cena: ${formatKinah(priceHintBase)} Kinah` : ''; return; }
+    let html = `${formatKinah(v)} Kinah`;
+    if (priceHintBase) {
+        const pct = ((v - priceHintBase) / priceHintBase) * 100;
+        if (pct === 0) html += ' · bez zmiany';
+        else html += ` · <span class="font-semibold ${pct > 0 ? 'text-rose-400' : 'text-emerald-400'}">${pct > 0 ? '▲ +' : '▼ '}${pct.toFixed(1)}%</span> względem aktualnej`;
+    }
+    el.innerHTML = html;
+}
+
 function showModal(focusId = 'formName') {
     const modal = document.getElementById('itemModal');
     const content = document.getElementById('modalContent');
@@ -82,7 +96,11 @@ function openAddModal() {
     document.getElementById('formItemId').value = '';
     document.getElementById('formDate').value = getTodayString();
     document.getElementById('formTime').value = getNowTime();
-    document.getElementById('modalTitle').textContent = 'Dodaj nowy przedmiot';
+    document.getElementById('modalTitle').textContent = 'Nowy przedmiot';
+    document.getElementById('modalSubtitle').textContent = 'Podaj dane przedmiotu i jego pierwszą cenę.';
+    document.getElementById('modalSaveBtn').textContent = 'Dodaj przedmiot';
+    priceHintBase = null;
+    updatePriceHint();
     document.getElementById('modalDeleteBtn').classList.add('hidden');
     showModal();
 }
@@ -98,7 +116,11 @@ function openEditModal(id) {
     document.getElementById('formDate').value = getTodayString();
     document.getElementById('formTime').value = getNowTime();
     document.getElementById('formWeight').value = item.weight || 4;
-    document.getElementById('modalTitle').textContent = 'Edytuj / zaktualizuj cenę';
+    document.getElementById('modalTitle').textContent = 'Edytuj przedmiot';
+    document.getElementById('modalSubtitle').textContent = 'Zapis doda wpis ceny z wybraną datą i godziną.';
+    document.getElementById('modalSaveBtn').textContent = 'Zapisz zmiany';
+    priceHintBase = currentEntry(item).price;
+    updatePriceHint();
     document.getElementById('modalDeleteBtn').classList.remove('hidden');
     showModal('formPrice');
 }
