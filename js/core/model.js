@@ -47,7 +47,7 @@ function periodLabel() {
 
 function getTrend(item) {
     const h = tableHistory(item);
-    if (h.length < 2) return { pct: null, cls: 'text-slate-500', arrow: '', text: '—' };
+    if (h.length < 2) return { pct: null, cls: 'text-slate-400', arrow: '', text: '—' };
     const first = h[0].price, cur = h[h.length - 1].price;
     if (first === 0 || cur === first) return { pct: 0, cls: 'text-slate-400', arrow: '→', text: '0%' };
     const pct = ((cur - first) / first) * 100;

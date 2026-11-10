@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Aion 2 - Market Price Tracker SaaS</title>
+    <title>Aion 2 Market – monitor cen</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -25,28 +25,28 @@
         }
     </script>
 
-    <link rel="stylesheet" href="css/base.css?v=8">
-    <link rel="stylesheet" href="css/chart.css?v=8">
-    <script defer src="config.js?v=8"></script>
-    <script defer src="data/categories.js?v=8"></script>
-    <script defer src="js/core/utils.js?v=8"></script>
-    <script defer src="data/seed.js?v=8"></script>
-    <script defer src="js/core/cloud.js?v=8"></script>
-    <script defer src="js/core/model.js?v=8"></script>
-    <script defer src="js/ui/sidebar.js?v=8"></script>
-    <script defer src="js/ui/table.js?v=8"></script>
-    <script defer src="js/ui/chart.js?v=8"></script>
-    <script defer src="js/ui/modals.js?v=8"></script>
-    <script defer src="js/ui/io.js?v=8"></script>
-    <script defer src="js/ui/auth.js?v=8"></script>
-    <script defer src="js/main.js?v=8"></script>
-    <script type="module" src="firebase.js?v=8"></script>
+    <link rel="stylesheet" href="css/base.css?v=9">
+    <link rel="stylesheet" href="css/chart.css?v=9">
+    <script defer src="config.js?v=9"></script>
+    <script defer src="data/categories.js?v=9"></script>
+    <script defer src="js/core/utils.js?v=9"></script>
+    <script defer src="data/seed.js?v=9"></script>
+    <script defer src="js/core/cloud.js?v=9"></script>
+    <script defer src="js/core/model.js?v=9"></script>
+    <script defer src="js/ui/sidebar.js?v=9"></script>
+    <script defer src="js/ui/table.js?v=9"></script>
+    <script defer src="js/ui/chart.js?v=9"></script>
+    <script defer src="js/ui/modals.js?v=9"></script>
+    <script defer src="js/ui/io.js?v=9"></script>
+    <script defer src="js/ui/auth.js?v=9"></script>
+    <script defer src="js/main.js?v=9"></script>
+    <script type="module" src="firebase.js?v=9"></script>
 
 </head>
 <body class="min-h-full flex flex-col antialiased text-slate-100 selection:bg-indigo-500 selection:text-white">
 
     <header class="border-b border-slate-800/80 bg-slate-900 sticky top-0 z-30">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="px-4 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-16 gap-4">
                 <div class="flex items-center gap-3">
                     <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 via-purple-600 to-amber-500 flex items-center justify-center shadow-lg shadow-indigo-500/20">
@@ -54,30 +54,29 @@
                     </div>
                     <div>
                         <div class="flex items-center gap-2">
-                            <span class="text-lg font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white via-slate-200 to-indigo-200">Aion 2 Market</span>
-                            <span class="text-[10px] px-2 py-0.5 rounded-full bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-bold uppercase tracking-wider">SaaS Tracker</span>
+                            <span class="text-lg font-extrabold tracking-tight text-white">Aion 2 Market</span>
                         </div>
-                        <p class="text-[11px] text-slate-400 font-medium">Real-time Broker & Price Analytics</p>
+                        <p class="text-xs text-slate-400 font-medium">Monitor cen rynkowych</p>
                     </div>
                 </div>
-                <div class="flex-1 max-w-md hidden md:block">
+                <div class="flex-1 max-w-xl hidden md:block">
                     <div class="relative search-box">
                         <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                        <input type="text" id="searchInput" autocomplete="off" oninput="handleSearch(this.value, this)" onfocus="handleSearch(this.value, this)" placeholder="Szukaj przedmiotu w Aion 2..."
-                            class="w-full pl-10 pr-10 py-2 bg-slate-950/70 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-500 text-slate-200">
+                        <input type="text" id="searchInput" aria-label="Szukaj przedmiotu" autocomplete="off" oninput="handleSearch(this.value, this)" onfocus="handleSearch(this.value, this)" placeholder="Szukaj przedmiotu w Aion 2..."
+                            class="w-full pl-10 pr-10 py-2 bg-slate-950/70 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all placeholder:text-slate-400 text-slate-200">
                         <button type="button" onclick="clearSearch(this)" title="Wyczyść" aria-label="Wyczyść" class="search-clear hidden absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full focus:outline-none text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"><i data-lucide="x" class="w-4 h-4"></i></button>
                         <div class="search-results hidden absolute left-0 right-0 top-full mt-2 glass-card rounded-xl p-1.5 shadow-2xl z-50 max-h-80 overflow-y-auto"></div>
                     </div>
                 </div>
                 <div class="flex items-center gap-3">
-                    <button onclick="exportData()" title="Pobierz kopię danych (JSON)" class="admin-only p-2 rounded-xl text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 border border-slate-800 transition-all">
+                    <button onclick="exportData()" title="Pobierz kopię danych (JSON)" aria-label="Pobierz kopię danych (JSON)" class="admin-only p-2 rounded-xl text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 border border-slate-800 transition-all">
                         <i data-lucide="download" class="w-4 h-4"></i>
                     </button>
-                    <button onclick="document.getElementById('importFile').click()" title="Wczytaj kopię danych (JSON)" class="admin-only p-2 rounded-xl text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 border border-slate-800 transition-all">
+                    <button onclick="document.getElementById('importFile').click()" title="Wczytaj kopię danych (JSON)" aria-label="Wczytaj kopię danych (JSON)" class="admin-only p-2 rounded-xl text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 border border-slate-800 transition-all">
                         <i data-lucide="upload" class="w-4 h-4"></i>
                     </button>
                     <input type="file" id="importFile" accept=".json,application/json" class="hidden" onchange="importData(this)">
-                    <button onclick="openAddModal()" class="admin-only flex items-center gap-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 text-white font-semibold px-4 py-2 rounded-xl transition-all shadow-lg shadow-indigo-500/20 active:scale-95 text-sm">
+                    <button onclick="openAddModal()" class="admin-only flex items-center gap-2 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold px-4 py-2 rounded-xl transition-all shadow-lg shadow-indigo-500/20 active:scale-95 text-sm">
                         <i data-lucide="plus-circle" class="w-4 h-4"></i>
                         <span class="hidden sm:inline">Dodaj przedmiot</span>
                     </button>
@@ -85,7 +84,7 @@
                     <div id="authWrap" class="relative">
                         <button id="authBtn" onclick="toggleAuth()" class="flex items-center gap-2 px-3 h-9 rounded-xl bg-slate-800 border border-slate-700 text-xs font-semibold text-slate-200 hover:text-white transition-all"><i data-lucide="log-in" class="w-4 h-4"></i><span class="hidden sm:inline">Zaloguj</span></button>
                         <div id="userMenu" class="hidden absolute right-0 top-full mt-2 w-60 glass-card rounded-xl p-2 shadow-2xl z-40">
-                            <p id="userMenuInfo" class="px-3 py-2 text-[11px] text-slate-400 break-words"></p>
+                            <p id="userMenuInfo" class="px-3 py-2 text-xs text-slate-400 break-words"></p>
                             <button onclick="logout()" class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-rose-400 hover:bg-rose-500/10 transition-all"><i data-lucide="log-out" class="w-4 h-4"></i> Wyloguj się</button>
                         </div>
                     </div>
@@ -99,56 +98,61 @@
     <!-- Sidebar kategorii: pełna wysokość, przyklejony do lewej krawędzi -->
     <aside class="w-full lg:w-64 flex-shrink-0 border-b lg:border-b-0 lg:border-r border-slate-800/80 bg-slate-900/60 backdrop-blur lg:sticky lg:top-16 lg:self-start lg:h-[calc(100vh-4rem)] lg:overflow-y-auto">
         <nav class="p-3 lg:p-4 lg:h-full flex flex-col">
-            <p class="hidden lg:flex items-center gap-2 px-3 pt-1 pb-4 text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            <p class="hidden lg:flex items-center gap-2 px-3 pt-1 pb-4 text-xs font-bold uppercase tracking-wider text-slate-400">
                 <i data-lucide="layout-list" class="w-3.5 h-3.5 text-indigo-400"></i> Kategorie
             </p>
             <div id="categoryList" class="flex lg:flex-col gap-1.5 overflow-x-auto lg:overflow-visible"></div>
         </nav>
     </aside>
 
-    <main class="flex-1 min-w-0 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+    <main class="flex-1 min-w-0 max-w-[1600px] mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
             <div class="block md:hidden">
                 <div class="relative search-box">
                     <i data-lucide="search" class="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"></i>
-                    <input type="text" autocomplete="off" oninput="handleSearch(this.value, this)" onfocus="handleSearch(this.value, this)" placeholder="Szukaj przedmiotu w Aion 2..."
+                    <input type="text" aria-label="Szukaj przedmiotu" autocomplete="off" oninput="handleSearch(this.value, this)" onfocus="handleSearch(this.value, this)" placeholder="Szukaj przedmiotu w Aion 2..."
                         class="w-full pl-10 pr-10 py-2.5 bg-slate-950/70 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-slate-200">
                     <button type="button" onclick="clearSearch(this)" title="Wyczyść" aria-label="Wyczyść" class="search-clear hidden absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-full focus:outline-none text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"><i data-lucide="x" class="w-4 h-4"></i></button>
                     <div class="search-results hidden absolute left-0 right-0 top-full mt-2 glass-card rounded-xl p-1.5 shadow-2xl z-50 max-h-80 overflow-y-auto"></div>
                 </div>
             </div>
 
-        <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-            <div class="glass-card rounded-2xl p-4 flex items-center gap-4 border-slate-800">
+        <div class="flex items-baseline gap-3 flex-wrap">
+            <h2 id="selectedItemTitle" class="text-2xl font-extrabold tracking-tight text-white">—</h2>
+            <span id="selectedItemMeta" class="text-sm text-slate-400"></span>
+        </div>
+
+        <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-[1.5fr_1fr_1fr_1fr] gap-4">
+            <div class="glass-card rounded-2xl p-5 flex items-center gap-4 border-slate-800 ring-1 ring-amber-500/30">
                 <div class="p-3 bg-amber-500/10 text-amber-400 rounded-xl border border-amber-500/20"><i data-lucide="coins" class="w-6 h-6"></i></div>
                 <div class="min-w-0">
                     <p class="text-xs font-medium text-slate-400">Aktualna cena (dziś)</p>
-                    <h3 class="text-lg font-bold whitespace-nowrap text-amber-400 mt-0.5" id="kpiCurrentPrice">—</h3>
-                    <p class="text-[11px] text-slate-500 truncate max-w-[190px]" id="kpiCurrentName">-</p>
+                    <h3 class="text-3xl font-extrabold whitespace-nowrap text-amber-400 mt-0.5" id="kpiCurrentPrice">—</h3>
+                    <p class="text-xs text-slate-400 truncate" id="kpiCurrentName">-</p>
                 </div>
             </div>
             <div class="glass-card rounded-2xl p-4 flex items-center gap-4 border-slate-800">
                 <div class="p-3 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20"><i data-lucide="arrow-down-narrow-wide" class="w-6 h-6"></i></div>
                 <div class="min-w-0">
                     <p class="text-xs font-medium text-slate-400">Najniższa cena (okres)</p>
-                    <h3 class="text-lg font-bold whitespace-nowrap text-emerald-400 mt-0.5" id="kpiLowPrice">—</h3>
-                    <p class="text-[11px] text-slate-500 truncate max-w-[190px]" id="kpiLowName">-</p>
+                    <h3 class="text-xl font-bold whitespace-nowrap text-emerald-400 mt-0.5" id="kpiLowPrice">—</h3>
+                    <p class="text-xs text-slate-400 truncate" id="kpiLowName">-</p>
                 </div>
             </div>
             <div class="glass-card rounded-2xl p-4 flex items-center gap-4 border-slate-800">
                 <div class="p-3 bg-rose-500/10 text-rose-400 rounded-xl border border-rose-500/20"><i data-lucide="arrow-up-narrow-wide" class="w-6 h-6"></i></div>
                 <div class="min-w-0">
                     <p class="text-xs font-medium text-slate-400 whitespace-nowrap">Najwyższa cena (okres)</p>
-                    <h3 class="text-lg font-bold whitespace-nowrap text-rose-400 mt-0.5" id="kpiHighPrice">—</h3>
-                    <p class="text-[11px] text-slate-500 truncate max-w-[190px]" id="kpiHighName">-</p>
+                    <h3 class="text-xl font-bold whitespace-nowrap text-rose-400 mt-0.5" id="kpiHighPrice">—</h3>
+                    <p class="text-xs text-slate-400 truncate" id="kpiHighName">-</p>
                 </div>
             </div>
             <div class="glass-card rounded-2xl p-4 flex items-center gap-4 border-slate-800">
                 <div class="p-3 bg-cyan-500/10 text-cyan-400 rounded-xl border border-cyan-500/20"><i data-lucide="shopping-bag" class="w-6 h-6"></i></div>
                 <div class="min-w-0">
                     <p class="text-xs font-medium text-slate-400">Przedmioty w sprzedaży</p>
-                    <h3 class="text-lg font-bold whitespace-nowrap text-cyan-400 mt-0.5" id="kpiSales">—</h3>
-                    <p class="text-[11px] text-slate-500 truncate max-w-[190px]" id="kpiSalesName">-</p>
+                    <h3 class="text-xl font-bold whitespace-nowrap text-cyan-400 mt-0.5" id="kpiSales">—</h3>
+                    <p class="text-xs text-slate-400 truncate" id="kpiSalesName">-</p>
                 </div>
             </div>
         </section>
@@ -159,7 +163,7 @@
                     <div class="w-12 h-12 rounded-xl bg-slate-900 border border-slate-800 p-2 flex-shrink-0 flex items-center justify-center text-indigo-400">
                         <i data-lucide="line-chart" class="w-6 h-6"></i>
                     </div>
-                    <select id="itemChartSelect" onchange="selectItemForChart(Number(this.value))" class="bg-slate-950 border border-slate-700 text-white text-base font-bold rounded-xl px-3 py-1 focus:outline-none focus:border-indigo-500 cursor-pointer"></select>
+                    <select id="itemChartSelect" aria-label="Wybrany przedmiot" onchange="selectItemForChart(Number(this.value))" class="bg-slate-950 border border-slate-700 text-white text-base font-bold rounded-xl px-3 py-1 focus:outline-none focus:border-indigo-500 cursor-pointer"></select>
                 </div>
                 <div class="flex flex-wrap items-center justify-end gap-2">
                     <div id="periodCustom" class="hidden items-center gap-2 text-xs text-slate-400">
@@ -167,8 +171,8 @@
                         <span>–</span>
                         <input type="date" id="periodTo" onchange="setCustomRange('chart')" title="Do" class="bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-lg px-2 py-1.5 focus:outline-none focus:border-indigo-500">
                     </div>
-                    <select id="periodSelect" onchange="setPeriod(this.value)" title="Okres" class="bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500 cursor-pointer">
-                        <option value="1">24h</option>
+                    <select id="periodSelect" aria-label="Okres" onchange="setPeriod(this.value)" title="Okres" class="bg-slate-950 border border-slate-700 text-slate-200 text-xs rounded-xl px-3 py-2.5 focus:outline-none focus:border-indigo-500 cursor-pointer">
+                        <option value="1">Ostatnie 24h</option>
                         <option value="7" selected>Ostatnie 7 dni</option>
                         <option value="30">Ostatnie 30 dni</option>
                         <option value="0">Cały okres</option>
@@ -176,22 +180,23 @@
                     </select>
                 </div>
             </div>
-            <div id="chartWrap" class="relative w-full pt-2"><canvas id="mainPriceChart"></canvas></div>
+            <div id="chartWrap" class="relative w-full pt-2"><canvas id="mainPriceChart" role="img" aria-label="Wykres cen"></canvas></div>
         </section>
 
         <section class="space-y-4">
             <div id="trendHead" class="flex flex-wrap items-center justify-between gap-3">
                 <h2 class="text-lg font-bold text-white flex items-center gap-2">
                     <i data-lucide="list-filter" class="w-5 h-5 text-indigo-400"></i>
-                    Trend list
+                    Lista trendów
                 </h2>
+                <p class="text-xs text-slate-400"><span class="font-semibold text-rose-400">▲ wzrost ceny</span> &nbsp;·&nbsp; <span class="font-semibold text-emerald-400">▼ spadek ceny</span> &nbsp;·&nbsp; dla kupującego spadek = lepiej</p>
             </div>
             <div class="glass-card rounded-2xl border-slate-800 overflow-hidden shadow-xl">
                 <div class="overflow-x-auto">
                     <table class="w-full text-left border-collapse">
                         <thead>
-                            <tr class="border-b border-slate-800 text-[11px] uppercase tracking-wider text-slate-400 bg-slate-950/60">
-                                <th class="py-3.5 px-4 text-center w-10"><i data-lucide="star" class="w-3.5 h-3.5 mx-auto"></i></th>
+                            <tr class="border-b border-slate-800 text-xs uppercase tracking-wider text-slate-400 bg-slate-950/60">
+                                <th class="py-3.5 px-4 text-center w-14"><i data-lucide="star" class="w-3.5 h-3.5 mx-auto"></i></th>
                                 <th class="py-3.5 px-4">Przedmiot</th>
                                 <th class="py-3.5 px-4 text-right"><button type="button" data-sort="current" onclick="setSort('current')" class="sort-btn inline-flex items-center gap-1 uppercase tracking-wider hover:text-white transition-colors">Aktualna cena <span class="sort-ind"></span></button></th>
                                 <th class="py-3.5 px-4 text-right"><button type="button" data-sort="low" onclick="setSort('low')" class="sort-btn inline-flex items-center gap-1 uppercase tracking-wider hover:text-white transition-colors">Najniższa cena <span class="sort-ind"></span></button></th>
@@ -204,7 +209,7 @@
                         <tbody id="itemTableBody" class="divide-y divide-slate-800/60 text-sm"></tbody>
                     </table>
                 </div>
-                <div id="emptyState" class="hidden py-12 text-center text-slate-500">
+                <div id="emptyState" class="hidden py-12 text-center text-slate-400">
                     <i data-lucide="package-search" class="w-12 h-12 mx-auto mb-3 opacity-40"></i>
                     <p class="text-base font-medium">Brak przedmiotów spełniających kryteria</p>
                 </div>
@@ -216,16 +221,16 @@
 
     <!-- Modal formularza -->
     <div id="itemModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden transition-opacity opacity-0">
-        <div class="glass-card rounded-2xl border-slate-700 w-full max-w-lg overflow-hidden shadow-2xl transform scale-95 transition-all" id="modalContent">
+        <div class="glass-card rounded-2xl border-slate-700 w-full max-w-xl overflow-hidden shadow-2xl transform scale-95 transition-all" id="modalContent" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
             <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
                 <h3 id="modalTitle" class="text-lg font-bold text-white">Dodaj nowy przedmiot</h3>
-                <button onclick="closeModal()" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
+                <button onclick="closeModal()" aria-label="Zamknij" class="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 transition-colors"><i data-lucide="x" class="w-5 h-5"></i></button>
             </div>
             <form id="itemForm" onsubmit="saveItem(event)" class="p-6 space-y-4">
                 <input type="hidden" id="formItemId">
                 <div>
                     <label class="block text-xs font-medium text-slate-300 mb-1.5">Nazwa przedmiotu *</label>
-                    <input type="text" id="formName" required placeholder="np. Radiant Odyle" class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white placeholder:text-slate-600">
+                    <input type="text" id="formName" required placeholder="np. Radiant Odyle" class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white placeholder:text-slate-400">
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
@@ -237,25 +242,23 @@
                         <select id="formSubCategory" required class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white"></select>
                     </div>
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Waga (Priorytet wyświetlania) *</label>
-                        <select id="formWeight" required class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white">
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Waga (priorytet) *</label>
+                        <select id="formWeight" required class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white placeholder:text-slate-400">
                             <option value="1">1 - Unique</option>
                             <option value="2">2 - Rare</option>
                             <option value="3">3 - Common</option>
                             <option value="4">4 - Normal</option>
                         </select>
                     </div>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Sales List (oferty) *</label>
-                        <input type="number" id="formSales" required min="0" placeholder="151" class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white placeholder:text-slate-600">
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Liczba ofert *</label>
+                        <input type="number" id="formSales" required min="0" placeholder="151" class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white placeholder:text-slate-400">
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Lowest Sale Price (Kinah) *</label>
-                        <input type="number" id="formPrice" required min="0" placeholder="240000" class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white placeholder:text-slate-600">
+                        <label class="block text-xs font-medium text-slate-300 mb-1.5">Najniższa cena (Kinah) *</label>
+                        <input type="number" id="formPrice" required min="0" placeholder="240000" class="w-full px-3.5 py-2 bg-slate-950 border border-slate-800 rounded-xl text-sm focus:outline-none focus:border-indigo-500 text-white placeholder:text-slate-400">
                     </div>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -272,7 +275,7 @@
                     <button type="button" id="modalDeleteBtn" onclick="promptDeleteFromModal()" class="hidden px-3 py-2 text-xs font-semibold text-rose-400 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 rounded-xl transition-all">Usuń przedmiot</button>
                     <div class="flex items-center gap-3 ml-auto">
                         <button type="button" onclick="closeModal()" class="px-4 py-2 text-sm text-slate-400 hover:text-white">Anuluj</button>
-                        <button type="submit" class="px-5 py-2 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 hover:from-indigo-600 hover:to-pink-600 text-white font-semibold rounded-xl text-sm shadow-lg shadow-indigo-500/20">Zapisz przedmiot</button>
+                        <button type="submit" class="px-5 py-2 bg-indigo-500 hover:bg-indigo-600 text-white font-semibold rounded-xl text-sm shadow-lg shadow-indigo-500/20">Zapisz przedmiot</button>
                     </div>
                 </div>
             </form>
@@ -281,11 +284,11 @@
 
     <!-- Potwierdzenie usunięcia -->
     <div id="confirmDeleteModal" class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden transition-opacity opacity-0">
-        <div class="glass-card rounded-2xl border-rose-500/30 w-full max-w-md p-6 text-center shadow-2xl transform scale-95 transition-all" id="confirmDeleteContent">
+        <div class="glass-card rounded-2xl border-rose-500/30 w-full max-w-md p-6 text-center shadow-2xl transform scale-95 transition-all" id="confirmDeleteContent" role="alertdialog" aria-modal="true" aria-labelledby="confirmDeleteTitle">
             <div class="w-14 h-14 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/20 flex items-center justify-center mx-auto mb-4">
                 <i data-lucide="alert-triangle" class="w-7 h-7"></i>
             </div>
-            <h3 class="text-lg font-bold text-white mb-2">Potwierdzenie usunięcia</h3>
+            <h3 id="confirmDeleteTitle" class="text-lg font-bold text-white mb-2">Potwierdzenie usunięcia</h3>
             <p id="confirmDeleteMessage" class="text-sm text-slate-300 mb-6 leading-relaxed">Czy na pewno chcesz usunąć ten przedmiot z rynku?</p>
             <div class="flex items-center justify-center gap-3">
                 <button onclick="closeConfirmDeleteModal()" class="px-4 py-2.5 text-sm font-medium text-slate-400 hover:text-white bg-slate-900 border border-slate-800 rounded-xl transition-all">Anuluj</button>
@@ -295,7 +298,7 @@
     </div>
 
     <!-- Toast -->
-    <div id="toast" class="fixed bottom-5 right-20 z-50 transform translate-y-20 opacity-0 transition-all duration-300 glass-card border border-indigo-500/30 px-4 py-3 rounded-xl flex items-center gap-3 shadow-2xl pointer-events-none">
+    <div id="toast" role="status" aria-live="polite" class="fixed bottom-5 right-20 z-50 transform translate-y-20 opacity-0 transition-all duration-300 glass-card border border-indigo-500/30 px-4 py-3 rounded-xl flex items-center gap-3 shadow-2xl pointer-events-none">
         <div class="w-8 h-8 rounded-lg bg-indigo-500/20 text-indigo-400 flex items-center justify-center"><i data-lucide="check-circle" class="w-5 h-5"></i></div>
         <div>
             <p id="toastTitle" class="text-sm font-semibold text-white">Sukces</p>
@@ -305,7 +308,7 @@
 
     <!-- Przycisk powrotu na górę -->
     <button id="toTopBtn" type="button" onclick="scrollToTop()" title="Wróć na górę" aria-label="Wróć na górę"
-        class="fixed bottom-5 right-5 z-40 w-11 h-11 rounded-xl bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 text-white flex items-center justify-center shadow-lg shadow-indigo-500/30 hover:brightness-110 active:scale-95">
+        class="fixed bottom-5 right-5 z-40 w-11 h-11 rounded-xl bg-indigo-500 hover:bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-500/30 hover:brightness-110 active:scale-95">
         <i data-lucide="arrow-up" class="w-5 h-5"></i>
     </button>
 

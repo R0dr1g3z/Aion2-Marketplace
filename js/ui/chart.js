@@ -23,6 +23,8 @@ function populateChartSelector() {
 
 function applyChartData() {
     const item = items.find(i => i.id === selectedItemId);
+    const cv = document.getElementById('mainPriceChart');
+    if (cv) cv.setAttribute('aria-label', item ? `Wykres cen: ${item.name}, ${periodLabel()}` : 'Wykres cen');
     chartPts = buildChartPoints(item ? periodHistory(item) : []);
     chartInstance.data.labels = chartPts.map(p => p.label);
     chartInstance.data.datasets[0].data = chartPts.map(p => p.avg);

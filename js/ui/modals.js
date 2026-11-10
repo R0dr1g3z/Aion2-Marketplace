@@ -62,11 +62,12 @@ function fillCategorySelects() {
     updateSubOptions();
 }
 
-function showModal() {
+function showModal(focusId = 'formName') {
     const modal = document.getElementById('itemModal');
     const content = document.getElementById('modalContent');
     modal.classList.remove('hidden');
     setTimeout(() => { modal.classList.remove('opacity-0'); content.classList.remove('scale-95'); }, 10);
+    setTimeout(() => { const el = document.getElementById(focusId); if (el) { el.focus(); if (el.select) el.select(); } }, 60);
 }
 function closeModal() {
     const modal = document.getElementById('itemModal');
@@ -99,7 +100,7 @@ function openEditModal(id) {
     document.getElementById('formWeight').value = item.weight || 4;
     document.getElementById('modalTitle').textContent = 'Edytuj / zaktualizuj cenę';
     document.getElementById('modalDeleteBtn').classList.remove('hidden');
-    showModal();
+    showModal('formPrice');
 }
 
 function saveItem(e) {

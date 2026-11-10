@@ -1,13 +1,8 @@
 function handleSearch(val, inputEl) {
-    currentSearchQuery = val;
-    renderTable();
+    currentSearchQuery = '';
     renderSearchResults(val, inputEl);
-    updateSearchClear(inputEl);
-}
-
-function updateSearchClear(inputEl) {
-    const btn = inputEl && inputEl.closest('.search-box').querySelector('.search-clear');
-    if (btn) btn.classList.toggle('hidden', !inputEl.value);
+    const clr = inputEl && inputEl.closest('.search-box').querySelector('.search-clear');
+    if (clr) clr.classList.toggle('hidden', !val);
 }
 
 function clearSearch(btn) {
@@ -31,14 +26,14 @@ function renderSearchResults(val, inputEl) {
     const matches = items.filter(i => i.name.toLowerCase().includes(q)).sort(sortByWeight);
 
     if (!matches.length) {
-        box.innerHTML = '<p class="px-3 py-3 text-sm text-slate-500">Brak wyników</p>';
+        box.innerHTML = '<p class="px-3 py-3 text-sm text-slate-400">Brak wyników</p>';
     } else {
         box.innerHTML = matches.map(i => {
             const cur = currentEntry(i);
             return `<button type="button" onclick="pickSearchResult(${i.id})" class="w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-left hover:bg-slate-800/70 transition-colors">
                 <span class="min-w-0">
                     <span class="block text-sm font-semibold text-slate-100 truncate">${esc(i.name)}</span>
-                    <span class="block text-[11px] text-slate-500 truncate">${esc(i.subCategory || 'Miscellaneous')}</span>
+                    <span class="block text-xs text-slate-400 truncate">${esc(i.subCategory || 'Miscellaneous')}</span>
                 </span>
                 <span class="text-xs font-semibold text-amber-400 whitespace-nowrap">${formatKinah(cur.price)} Kinah</span>
             </button>`;
@@ -54,19 +49,21 @@ function pickSearchResult(id) {
     updateChartData();
     renderTable();
     hideSearchResults();
+    const row = document.querySelector('#itemTableBody tr.row-selected');
+    if (row) row.scrollIntoView({ block: 'center', behavior: 'smooth' });
 }
 
 function renderCategories() {
     const list = document.getElementById('categoryList');
     if (!list) return;
     const btnCls = a => a ? 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border-transparent';
-    const badgeCls = a => a ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-800 text-slate-500';
+    const badgeCls = a => a ? 'bg-indigo-500/20 text-indigo-300' : 'bg-slate-800 text-slate-400';
 
     const mainRow = (onclick, icon, label, count, active) => `
         <button onclick="${onclick}" class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-all border ${btnCls(active)}">
             <i data-lucide="${icon}" class="w-4 h-4 flex-shrink-0 ${active ? 'text-indigo-400' : ''}"></i>
             <span class="truncate">${label}</span>
-            <span class="ml-auto text-[11px] px-1.5 py-0.5 rounded-md ${badgeCls(active)}">${count}</span>
+            <span class="ml-auto text-xs px-1.5 py-0.5 rounded-md ${badgeCls(active)}">${count}</span>
         </button>`;
 
     let html = mainRow("selectCategory('Wszystkie')", 'layout-grid', 'Wszystkie', items.length, currentCategory === 'Wszystkie');
@@ -82,7 +79,7 @@ function renderCategories() {
                     const a = currentCategory === c.key && currentSub === sub;
                     return `<button onclick="filterCategory('${c.key}', '${sub}')" class="w-full flex items-center gap-2 px-2.5 py-2 rounded-lg text-xs font-medium transition-all ${a ? 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/30' : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'}">
                         <span class="truncate">${sub}</span>
-                        <span class="ml-auto text-[10px] px-1.5 rounded ${badgeCls(a)}">${n}</span>
+                        <span class="ml-auto text-xs px-1.5 rounded ${badgeCls(a)}">${n}</span>
                     </button>`;
                 }).join('') + `</div>`;
         }
